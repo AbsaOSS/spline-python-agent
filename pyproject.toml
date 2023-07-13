@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "spline_agent"
+version = "0.1.0"
+description = "Spline agent for Python - lineage tracking tool"
+authors = [
+    "Oleksandr Vayda <oleksandr.vayda@absa.africa>"
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+ordered-set = "^4.1.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.0"
+
+[build-system]
+requires = ["poetry-core>=1.6.1"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
