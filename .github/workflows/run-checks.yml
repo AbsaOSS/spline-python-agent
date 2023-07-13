@@ -41,3 +41,7 @@ jobs:
       - name: Run tests
         run: |
           poetry run pytest
+
+      - name: Run lints
+        run: |
+          poetry run mypy

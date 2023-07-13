@@ -30,24 +30,25 @@ class LineageHarvestingContext:
     def name(self) -> Optional[str]:
         return self._name
 
-    @property
-    def ins(self) -> tuple[DataSource, ...]:
-        return tuple(self._ins)
-
-    @property
-    def out(self) -> Optional[DataSource]:
-        return self._out
-
     @name.setter
     def name(self, value: str):
         # todo: warning if _name is reassigned
         self._name = value
 
+    @property
+    def inputs(self) -> tuple[DataSource, ...]:
+        return tuple(self._ins)
+
     def add_input(self, ds: DataSource):
         # todo: warning if ds is already registered
         self._ins.add(ds)
 
-    def set_output(self, ds: DataSource):
+    @property
+    def output(self) -> Optional[DataSource]:
+        return self._out
+
+    @output.setter
+    def output(self, ds: DataSource):
         # todo: warning if _out is reassigned
         self._out = ds
 
@@ -55,7 +56,7 @@ class LineageHarvestingContext:
 _context_holder: ContextVar[LineageHarvestingContext] = ContextVar('context')
 
 
-def get_tracking_context() -> LineageHarvestingContext:
+def get_tracking_context() -> Optional[LineageHarvestingContext]:
     return _context_holder.get(None)
 
 

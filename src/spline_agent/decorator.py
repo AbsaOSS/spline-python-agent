@@ -25,8 +25,8 @@ DsParamExpr = Union[str, DataSource]
 
 def track_lineage(
         name: Optional[str] = None,
-        ins: tuple[DsParamExpr, ...] = (),
-        out: Optional[DsParamExpr] = None):
+        inputs: tuple[DsParamExpr, ...] = (),
+        output: Optional[DsParamExpr] = None):
     # check if the decorator is used correctly
     if callable(name):
         # it happens when the user forgets parenthesis when using a parametrized decorator,
@@ -56,14 +56,14 @@ def track_lineage(
             ctx.name = _eval_str_expr(name, bindings) if name else func.__name__
 
             # ... inputs
-            for inp in ins:
+            for inp in inputs:
                 ds = _eval_ds_expr(inp, bindings)
                 ctx.add_input(ds)
 
             # ... output
-            if out is not None:
-                ds = _eval_ds_expr(out, bindings)
-                ctx.set_output(ds)
+            if output is not None:
+                ds = _eval_ds_expr(output, bindings)
+                ctx.output = ds
 
             # call target function within the given harvesting context
             return with_context_do(ctx, lambda: func(*args, **kwargs))
@@ -73,7 +73,7 @@ def track_lineage(
     return decorator
 
 
-def _eval_ds_expr(expr: DsParamExpr, mapping: Mapping[str, Any] = None) -> DataSource:
+def _eval_ds_expr(expr: DsParamExpr, mapping: Mapping[str, Any] = {}) -> DataSource:
     if isinstance(expr, DataSource):
         return expr
 
@@ -88,7 +88,7 @@ def _eval_ds_expr(expr: DsParamExpr, mapping: Mapping[str, Any] = None) -> DataS
     raise ValueError(f"{expr} should be a DataSource, URL string, or a parameter binding expression like {{name}}")
 
 
-def _eval_str_expr(expr: str, mapping: Mapping[str, Any] = None) -> DataSource:
+def _eval_str_expr(expr: str, mapping: Mapping[str, Any] = {}) -> str:
     if expr.startswith("{") and expr.endswith("}") and (expr[1:-1]).isidentifier():
         key = expr[1:-1]
         val = mapping[key]
