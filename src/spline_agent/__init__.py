@@ -12,3 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from .context import get_tracking_context
+from .decorator import track_lineage
+
+__all__ = ['track_lineage', 'get_tracking_context']

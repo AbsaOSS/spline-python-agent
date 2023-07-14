@@ -12,9 +12,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from dataclasses import dataclass
+import time
+
+from spline_agent.lineage_model import Timestamp
 
 
-@dataclass(frozen=True)
-class DataSource:
-    url: str
+def current_time() -> Timestamp:
+    """Current time since Epoch is millis"""
+    return int(round(time.time() * 1000))

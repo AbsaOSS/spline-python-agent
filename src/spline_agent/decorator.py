@@ -14,11 +14,13 @@
 
 import inspect
 from functools import wraps
-from typing import Optional, Union, Any, Mapping
+from typing import Optional, Union, Mapping
 from urllib.parse import urlparse
 
 from spline_agent.context import get_tracking_context, with_context_do, LineageHarvestingContext
 from spline_agent.datasources import DataSource
+from spline_agent.harvester import harvest_lineage
+from spline_agent.json_serde import to_json_str
 
 DsParamExpr = Union[str, DataSource]
 
@@ -33,7 +35,7 @@ def track_lineage(
         # so the decorated function unintentionally becomes the value for the 1st positional parameter
         # that in this case happens to be `name`.
         decor_name = inspect.currentframe().f_code.co_name
-        raise TypeError(f"'{decor_name}' decorator should be used with parentheses, even if no arguments are provided")
+        raise TypeError(f'@{decor_name}() decorator should be used with parentheses, even if no arguments are provided')
 
     def decorator(func):
         # inspect the 'func' signature and collect the parameter names
@@ -47,9 +49,9 @@ def track_lineage(
             assert get_tracking_context() is None
 
             # create a combined dictionary of all arguments passed to target function
-            bindings = {**{name: arg for name, arg in zip(params, args)}, **kwargs}
+            bindings = {**{key: arg for key, arg in zip(params, args)}, **kwargs}
 
-            # create and prepopulate a new harvesting context
+            # create and pre-populate a new harvesting context
             ctx = LineageHarvestingContext()
 
             # ... app name
@@ -66,31 +68,46 @@ def track_lineage(
                 ctx.output = ds
 
             # call target function within the given harvesting context
-            return with_context_do(ctx, lambda: func(*args, **kwargs))
+            func_res = with_context_do(ctx, lambda: func(*args, **kwargs))
+
+            # obtain lineage model
+            lineage = harvest_lineage(ctx, func)
+
+            # todo: send the lineage to the dispatcher (issue #2)
+            print(f'[SPLINE] Captured lineage: \n\n{to_json_str(lineage)}\n\n')
+
+            return func_res
 
         return wrapper
 
     return decorator
 
 
-def _eval_ds_expr(expr: DsParamExpr, mapping: Mapping[str, Any] = {}) -> DataSource:
+def _eval_ds_expr(expr: DsParamExpr, mapping=None) -> DataSource:
+    if mapping is None:
+        mapping = {}
+
     if isinstance(expr, DataSource):
         return expr
 
     if isinstance(expr, str):
-        if expr.startswith("{") and expr.endswith("}") and (expr[1:-1]).isidentifier():
+        if expr.startswith('{') and expr.endswith('}') and (expr[1:-1]).isidentifier():
             key = expr[1:-1]
             val = mapping[key]
             return _eval_ds_expr(val)
         if urlparse(expr):
             return DataSource(expr)
 
-    raise ValueError(f"{expr} should be a DataSource, URL string, or a parameter binding expression like {{name}}")
+    raise ValueError(f'{expr} should be a DataSource, URL string, or a parameter binding expression like {{name}}')
 
 
-def _eval_str_expr(expr: str, mapping: Mapping[str, Any] = {}) -> str:
-    if expr.startswith("{") and expr.endswith("}") and (expr[1:-1]).isidentifier():
+def _eval_str_expr(expr: str, mapping=None) -> str:
+    if mapping is None:
+        mapping = {}
+
+    if expr.startswith('{') and expr.endswith('}') and (expr[1:-1]).isidentifier():
         key = expr[1:-1]
         val = mapping[key]
         return val
+
     return expr

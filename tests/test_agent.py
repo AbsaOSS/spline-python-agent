@@ -49,7 +49,7 @@ def test_decorator_with_default_args():
 
 
 def test_decorator_with_provided_args():
-    @track_lineage(name="My test app", inputs=('foo', '{arg1}', '{arg2}'), output='qux')
+    @track_lineage(name='My test app', inputs=('foo', '{arg1}', '{arg2}'), output='qux')
     def my_test_func(arg1: str, arg2: DataSource):
         ctx = get_tracking_context()
         assert ctx is not None
@@ -61,7 +61,7 @@ def test_decorator_with_provided_args():
 
 
 def test_decorator_with_name_as_expression():
-    @track_lineage(name="{arg1}")
+    @track_lineage(name='{arg1}')
     def my_test_func(arg1: str):
         ctx = get_tracking_context()
         assert ctx is not None
