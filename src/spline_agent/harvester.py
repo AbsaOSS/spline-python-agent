@@ -24,7 +24,11 @@ from spline_agent.lineage_model import *
 from spline_agent.utils import current_time
 
 
-def harvest_lineage(ctx: LineageTrackingContext, entry_func: Callable) -> Lineage:
+def harvest_lineage(
+        ctx: LineageTrackingContext,
+        entry_func: Callable,
+        duration_ns: Optional[DurationNs],
+        error: Optional[Any]) -> Lineage:
     if ctx.output is None:
         raise LineageContextIncompleteError('output')
     if ctx.write_mode is None:
@@ -62,12 +66,16 @@ def harvest_lineage(ctx: LineageTrackingContext, entry_func: Callable) -> Lineag
         name=ctx.name,
         operations=operations,
         systemInfo=ctx.system_info,
-        agentInfo=AGENT_INFO
+        agentInfo=AGENT_INFO,
     )
+
     event = ExecutionEvent(
-        plan_id=plan.id,
+        planId=plan.id,
         timestamp=cur_time,
+        durationNs=duration_ns,
+        error=error,
     )
+
     lineage = Lineage(plan, event)
     return lineage
 

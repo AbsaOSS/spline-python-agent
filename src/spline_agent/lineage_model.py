@@ -13,11 +13,14 @@
 #  limitations under the License.
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 from uuid import UUID
 
 # Timestamp since the Unix epoch in milliseconds
 Timestamp = int
+
+# Duration of the event in nanoseconds
+DurationNs = int
 
 # Represents an execution plan operation ID as string, e.g. 'op-123'
 OperationId = str
@@ -71,8 +74,10 @@ class ExecutionPlan:
 
 @dataclass
 class ExecutionEvent:
-    plan_id: UUID
+    planId: UUID
     timestamp: Timestamp
+    durationNs: Optional[DurationNs]
+    error: Optional[Any]
 
 
 @dataclass

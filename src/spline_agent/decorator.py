@@ -13,17 +13,17 @@
 #  limitations under the License.
 
 import inspect
+import time
 from functools import wraps
-from typing import Optional, Union, Mapping
+from typing import Optional, Union, Mapping, Any
 from urllib.parse import urlparse
 
-from spline_agent import get_tracking_context
 from spline_agent.context import with_context_do, LineageTrackingContext, WriteMode
 from spline_agent.datasources import DataSource
 from spline_agent.exceptions import LineageContextIncompleteError
 from spline_agent.harvester import harvest_lineage
 from spline_agent.json_serde import to_json_str
-from spline_agent.lineage_model import NameAndVersion
+from spline_agent.lineage_model import NameAndVersion, DurationNs
 
 DsParamExpr = Union[str, DataSource]
 
@@ -73,12 +73,27 @@ def track_lineage(
             ctx.write_mode = write_mode
             ctx.system_info = system_info
 
-            # call target function within the given harvesting context
-            func_res = with_context_do(ctx, lambda: func(*args, **kwargs))
+            duration_ns: Optional[DurationNs] = None
+            error: Optional[Any] = None
 
-            # obtain lineage model
+            def execute_func():
+                nonlocal duration_ns
+                nonlocal error
+                start_time: DurationNs = time.time_ns()
+                try:
+                    return func(*args, **kwargs)
+                except Exception as ex:
+                    error = ex.__str__()
+                finally:
+                    end_time: DurationNs = time.time_ns()
+                    duration_ns = end_time - start_time
+
+            # call target function within the given harvesting context
+            func_res = with_context_do(ctx, execute_func)
+
             try:
-                lineage = harvest_lineage(ctx, func)
+                # obtain lineage model
+                lineage = harvest_lineage(ctx, func, duration_ns, error)
 
                 # todo: send the lineage to the dispatcher (issue #2)
                 print(f'[SPLINE] Captured lineage: \n\n{to_json_str(lineage)}\n\n')
