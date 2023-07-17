@@ -18,7 +18,7 @@ from dataclasses import asdict
 from json import JSONEncoder
 from typing import Any
 
-from spline_agent.lineage_model import Lineage
+from spline_agent.lineage_model import Lineage, ExecutionPlan, ExecutionEvent
 
 
 def to_json_str(obj: Any):
@@ -30,6 +30,6 @@ class LineageEncoder(JSONEncoder):
     def default(self, o: Any) -> Any:
         if isinstance(o, uuid.UUID):
             return str(o)
-        elif isinstance(o, Lineage):
+        elif isinstance(o, Lineage) or isinstance(o, ExecutionPlan) or isinstance(o, ExecutionEvent):
             return asdict(o)
         return super().default(o)

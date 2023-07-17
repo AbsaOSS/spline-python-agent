@@ -17,9 +17,7 @@ import importlib.metadata
 import spline_agent
 from spline_agent.lineage_model import NameAndVersion
 
-__pkg_meta = importlib.metadata.metadata(spline_agent.__name__)
-
 AGENT_INFO = NameAndVersion(
-    name=__pkg_meta['name'],
-    version=__pkg_meta['version']
+    name='spline-python-agent',
+    version=importlib.metadata.version(spline_agent.__name__)
 )
