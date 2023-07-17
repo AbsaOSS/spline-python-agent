@@ -12,24 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import json
-import uuid
-from dataclasses import asdict
-from json import JSONEncoder
-from typing import Any
+class LineageContextNotInitialized(BaseException):
+    """ Lineage harvesting context was not properly initialized"""
 
-from spline_agent.lineage_model import Lineage
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
-def to_json_str(obj: Any):
-    json_str = json.dumps(obj, cls=LineageEncoder, indent=4)
-    return json_str
+class LineageContextIncompleteError(BaseException):
+    """ Required property is missing from the lineage harvesting context """
 
-
-class LineageEncoder(JSONEncoder):
-    def default(self, o: Any) -> Any:
-        if isinstance(o, uuid.UUID):
-            return str(o)
-        elif isinstance(o, Lineage):
-            return asdict(o)
-        return super().default(o)
+    def __init__(self, property_name: str):
+        self.property_name = property_name
+        super().__init__(f"Required property `{property_name}` wasn't specified")

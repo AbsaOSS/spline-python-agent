@@ -11,17 +11,27 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import inspect
 import sys
 import uuid
 from typing import Callable
 
-from spline_agent.context import LineageHarvestingContext
+from spline_agent.constants import AGENT_INFO
+from spline_agent.context import LineageTrackingContext, WriteMode
+from spline_agent.exceptions import LineageContextIncompleteError
 from spline_agent.lineage_model import *
 from spline_agent.utils import current_time
 
 
-def harvest_lineage(ctx: LineageHarvestingContext, entry_func: Callable) -> Lineage:
+def harvest_lineage(ctx: LineageTrackingContext, entry_func: Callable) -> Lineage:
+    if ctx.output is None:
+        raise LineageContextIncompleteError('output')
+    if ctx.write_mode is None:
+        raise LineageContextIncompleteError('write_mode')
+    if ctx.system_info is None:
+        raise LineageContextIncompleteError('system_info')
+
     cur_time = current_time()
 
     write_operation = WriteOperation(
@@ -29,7 +39,7 @@ def harvest_lineage(ctx: LineageHarvestingContext, entry_func: Callable) -> Line
         childIds=('op-1',),
         name='Write',  # todo: put something more meaningful there, maybe 'write to {ds.type}'
         outputSource=ctx.output.url,
-        append=False,  # todo: get it from context
+        append=ctx.write_mode == WriteMode.APPEND,
     )
 
     read_operations = tuple(
@@ -51,14 +61,8 @@ def harvest_lineage(ctx: LineageHarvestingContext, entry_func: Callable) -> Line
         id=uuid.uuid4(),
         name=ctx.name,
         operations=operations,
-        systemInfo=NameAndVersion(  # todo: this should be provided by the user via ctx
-            name='some python app',
-            version='0.0.0',
-        ),
-        agentInfo=NameAndVersion(
-            name='spline-python-agent',
-            version='0.1.0-SNAPSHOT',  # todo: take it from the package metadata
-        )
+        systemInfo=ctx.system_info,
+        agentInfo=AGENT_INFO
     )
     event = ExecutionEvent(
         plan_id=plan.id,
@@ -68,13 +72,13 @@ def harvest_lineage(ctx: LineageHarvestingContext, entry_func: Callable) -> Line
     return lineage
 
 
-def _process_func(ctx: LineageHarvestingContext, func: Callable) -> tuple[DataOperation, ...]:
+def _process_func(ctx: LineageTrackingContext, func: Callable) -> tuple[DataOperation, ...]:
     # todo: parse and process the imported modules/functions recursively (issue #4)
     func_source_code = inspect.getsource(func)
 
     operation = DataOperation(
         id='op-1',
-        childIds=tuple(f'op-{i+2}' for i in range(len(ctx.inputs))),
+        childIds=tuple(f'op-{i + 2}' for i in range(len(ctx.inputs))),
         name='Python script',
         extra={
             'python_version': sys.version,

@@ -17,10 +17,13 @@ from functools import wraps
 from typing import Optional, Union, Mapping
 from urllib.parse import urlparse
 
-from spline_agent.context import get_tracking_context, with_context_do, LineageHarvestingContext
+from spline_agent import get_tracking_context
+from spline_agent.context import with_context_do, LineageTrackingContext, WriteMode
 from spline_agent.datasources import DataSource
+from spline_agent.exceptions import LineageContextIncompleteError
 from spline_agent.harvester import harvest_lineage
 from spline_agent.json_serde import to_json_str
+from spline_agent.lineage_model import NameAndVersion
 
 DsParamExpr = Union[str, DataSource]
 
@@ -28,7 +31,10 @@ DsParamExpr = Union[str, DataSource]
 def track_lineage(
         name: Optional[str] = None,
         inputs: tuple[DsParamExpr, ...] = (),
-        output: Optional[DsParamExpr] = None):
+        output: Optional[DsParamExpr] = None,
+        write_mode: Optional[WriteMode] = None,
+        system_info: Optional[NameAndVersion] = None,
+):
     # check if the decorator is used correctly
     if callable(name):
         # it happens when the user forgets parenthesis when using a parametrized decorator,
@@ -44,15 +50,11 @@ def track_lineage(
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # the function is not reentrant
-            # there must be no context in the context holder
-            assert get_tracking_context() is None
-
             # create a combined dictionary of all arguments passed to target function
             bindings = {**{key: arg for key, arg in zip(params, args)}, **kwargs}
 
             # create and pre-populate a new harvesting context
-            ctx = LineageHarvestingContext()
+            ctx = LineageTrackingContext()
 
             # ... app name
             ctx.name = _eval_str_expr(name, bindings) if name else func.__name__
@@ -67,14 +69,22 @@ def track_lineage(
                 ds = _eval_ds_expr(output, bindings)
                 ctx.output = ds
 
+            # ... other params
+            ctx.write_mode = write_mode
+            ctx.system_info = system_info
+
             # call target function within the given harvesting context
             func_res = with_context_do(ctx, lambda: func(*args, **kwargs))
 
             # obtain lineage model
-            lineage = harvest_lineage(ctx, func)
+            try:
+                lineage = harvest_lineage(ctx, func)
 
-            # todo: send the lineage to the dispatcher (issue #2)
-            print(f'[SPLINE] Captured lineage: \n\n{to_json_str(lineage)}\n\n')
+                # todo: send the lineage to the dispatcher (issue #2)
+                print(f'[SPLINE] Captured lineage: \n\n{to_json_str(lineage)}\n\n')
+
+            except LineageContextIncompleteError as e:
+                print(f'[WARNING] Lineage skipped: {e.__str__()}')
 
             return func_res
 

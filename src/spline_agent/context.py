@@ -12,19 +12,30 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
 from contextvars import ContextVar
+from enum import Enum
+from enum import auto
 from typing import Optional, Callable
 
 from ordered_set import OrderedSet
+
 from spline_agent.datasources import DataSource
+from spline_agent.exceptions import LineageContextNotInitialized
+from spline_agent.lineage_model import NameAndVersion
 
 
-class LineageHarvestingContext:
+class WriteMode(Enum):
+    APPEND = auto()
+    OVERWRITE = auto()
+
+
+class LineageTrackingContext:
     def __init__(self):
         self._name: Optional[str] = None
         self._ins: OrderedSet[DataSource] = OrderedSet()
         self._out: Optional[DataSource] = None
+        self._write_mode: Optional[WriteMode] = None
+        self._system_info: Optional[NameAndVersion] = None
 
     @property
     def name(self) -> Optional[str]:
@@ -52,15 +63,39 @@ class LineageHarvestingContext:
         # todo: warning if _out is reassigned
         self._out = ds
 
+    @property
+    def write_mode(self) -> Optional[WriteMode]:
+        return self._write_mode
 
-_context_holder: ContextVar[LineageHarvestingContext] = ContextVar('context')
+    @write_mode.setter
+    def write_mode(self, mode: WriteMode):
+        self._write_mode = mode
+
+    @property
+    def system_info(self) -> Optional[NameAndVersion]:
+        return self._system_info
+
+    @system_info.setter
+    def system_info(self, mode: NameAndVersion):
+        self._system_info = mode
 
 
-def get_tracking_context() -> Optional[LineageHarvestingContext]:
-    return _context_holder.get(None)
+_context_holder: ContextVar[LineageTrackingContext] = ContextVar('context')
 
 
-def with_context_do(ctx: LineageHarvestingContext, call: Callable):
+def get_tracking_context() -> LineageTrackingContext:
+    from .decorator import track_lineage
+
+    ctx = _context_holder.get(None)
+    if ctx is None:
+        this_fn_name = get_tracking_context.__name__
+        decorator_name = track_lineage.__name__
+        raise LineageContextNotInitialized(
+            f"The function `{this_fn_name}()` was called outside of `@{decorator_name}()` decorator")
+    return ctx
+
+
+def with_context_do(ctx: LineageTrackingContext, call: Callable):
     ctx_token = _context_holder.set(ctx)
     try:
         return call()

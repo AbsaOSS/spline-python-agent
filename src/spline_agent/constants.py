@@ -12,24 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import json
-import uuid
-from dataclasses import asdict
-from json import JSONEncoder
-from typing import Any
+import importlib.metadata
 
-from spline_agent.lineage_model import Lineage
+import spline_agent
+from spline_agent.lineage_model import NameAndVersion
 
+__pkg_meta = importlib.metadata.metadata(spline_agent.__name__)
 
-def to_json_str(obj: Any):
-    json_str = json.dumps(obj, cls=LineageEncoder, indent=4)
-    return json_str
-
-
-class LineageEncoder(JSONEncoder):
-    def default(self, o: Any) -> Any:
-        if isinstance(o, uuid.UUID):
-            return str(o)
-        elif isinstance(o, Lineage):
-            return asdict(o)
-        return super().default(o)
+AGENT_INFO = NameAndVersion(
+    name=__pkg_meta['name'],
+    version=__pkg_meta['version']
+)

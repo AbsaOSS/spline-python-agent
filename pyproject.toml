@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spline_agent"
-version = "0.1.0"
+version = "0.1.0.dev1"
 description = "Spline agent for Python - lineage tracking tool"
 authors = [
     "Oleksandr Vayda <oleksandr.vayda@absa.africa>"

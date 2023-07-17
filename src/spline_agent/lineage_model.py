@@ -11,7 +11,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 from dataclasses import dataclass
+from typing import Optional
 from uuid import UUID
 
 # Timestamp since the Unix epoch in milliseconds
@@ -61,7 +63,7 @@ class Operations:
 @dataclass
 class ExecutionPlan:
     id: UUID
-    name: str
+    name: Optional[str]
     systemInfo: NameAndVersion
     agentInfo: NameAndVersion
     operations: Operations

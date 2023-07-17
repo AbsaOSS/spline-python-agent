@@ -13,6 +13,6 @@
 #  limitations under the License.
 
 from .context import get_tracking_context
+from .decorator import DataSource
+from .decorator import DsParamExpr
 from .decorator import track_lineage
-
-__all__ = ['track_lineage', 'get_tracking_context']

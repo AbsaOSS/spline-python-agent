@@ -12,9 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from spline_agent.context import get_tracking_context
+import pytest
+
+from spline_agent.context import WriteMode, get_tracking_context
 from spline_agent.datasources import DataSource
 from spline_agent.decorator import track_lineage
+from spline_agent.exceptions import LineageContextNotInitialized
+from spline_agent.lineage_model import NameAndVersion
 
 
 def test_decorator_calls_func_and_returns_value():
@@ -29,11 +33,13 @@ def test_context_mgmt():
     def test_func():
         assert get_tracking_context() is not None
 
-    assert get_tracking_context() is None
+    with pytest.raises(LineageContextNotInitialized):
+        get_tracking_context()
 
     test_func()
 
-    assert get_tracking_context() is None
+    with pytest.raises(LineageContextNotInitialized):
+        get_tracking_context()
 
 
 def test_decorator_with_default_args():
@@ -44,27 +50,37 @@ def test_decorator_with_default_args():
         assert ctx.name == 'test_func'
         assert len(ctx.inputs) == 0
         assert ctx.output is None
+        assert ctx.write_mode is None
+        assert ctx.system_info is None
 
     test_func()
 
 
 def test_decorator_with_provided_args():
-    @track_lineage(name='My test app', inputs=('foo', '{arg1}', '{arg2}'), output='qux')
+    # noinspection PyUnusedLocal
+    @track_lineage(
+        name='My test app',
+        inputs=('foo', '{arg1}', '{arg2}'),
+        output='qux',
+        write_mode=WriteMode.OVERWRITE,
+        system_info=NameAndVersion('dummy system', 'dummy version'),
+    )
     def my_test_func(arg1: str, arg2: DataSource):
         ctx = get_tracking_context()
         assert ctx is not None
         assert ctx.name == "My test app"
-        assert ctx.inputs == (DataSource('foo'), DataSource(arg1), arg2)
+        assert ctx.inputs == (DataSource('foo'), DataSource('bar'), DataSource('baz'))
         assert ctx.output == DataSource('qux')
 
     my_test_func('bar', arg2=DataSource('baz'))
 
 
 def test_decorator_with_name_as_expression():
+    # noinspection PyUnusedLocal
     @track_lineage(name='{arg1}')
     def my_test_func(arg1: str):
         ctx = get_tracking_context()
         assert ctx is not None
-        assert ctx.name == arg1
+        assert ctx.name == 'foo'
 
     my_test_func('foo')
