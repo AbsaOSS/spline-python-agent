@@ -76,13 +76,19 @@ def _process_func(ctx: LineageTrackingContext, func: Callable) -> tuple[DataOper
     # todo: parse and process the imported modules/functions recursively (issue #4)
     func_source_code = inspect.getsource(func)
 
+    func_name = func.__name__
+    module_name = func.__module__
+    file_name = inspect.getfile(func)
+
     operation = DataOperation(
         id='op-1',
         childIds=tuple(f'op-{i + 2}' for i in range(len(ctx.inputs))),
         name='Python script',
         extra={
             'python_version': sys.version,
-            'function_name': func.__name__,
+            'function_name': func_name,
+            'module_name': module_name,
+            'source_file': file_name,
             'source_code': func_source_code,
         }
     )
