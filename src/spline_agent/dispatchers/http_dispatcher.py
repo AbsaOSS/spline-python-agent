@@ -1,0 +1,63 @@
+#  Copyright 2023 ABSA Group Limited
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+import logging
+from urllib.parse import urljoin
+
+import requests
+from http_constants.headers import HttpHeaders
+from requests import Response
+
+from spline_agent.dispatcher import LineageDispatcher
+from spline_agent.json_serde import to_compact_json_str
+from spline_agent.lineage_model import ExecutionEvent, ExecutionPlan
+
+SPLINE_PRODUCER_PLANS_PATH = 'execution-plans'
+SPLINE_PRODUCER_EVENTS_PATH = 'execution-events'
+SPLINE_PRODUCER_CONTENT_TYPE_VER_12 = 'application/vnd.absa.spline.producer.v1.2+json'
+
+
+class HttpLineageDispatcher(LineageDispatcher):
+    """
+    Lineage dispatcher that sends lineage information
+    to the remote endpoint over the REST protocol.
+    """
+
+    def __init__(self,
+                 base_url: str,
+                 plans_path: str = SPLINE_PRODUCER_PLANS_PATH,
+                 events_path: str = SPLINE_PRODUCER_EVENTS_PATH,
+                 content_type: str = SPLINE_PRODUCER_CONTENT_TYPE_VER_12,
+                 ):
+        base_plan_with_slash = f'{base_url}/'
+        self.plans_url = urljoin(base_plan_with_slash, plans_path)
+        self.events_url = urljoin(base_plan_with_slash, events_path)
+        self.content_type = content_type
+
+    def send_plan(self, plan: ExecutionPlan):
+        """POST execution plan"""
+        plan_json: str = to_compact_json_str(plan)
+        res = self.__do_send(plan_json, self.plans_url)
+        logging.info(f'execution plan sent: {res.status_code}, {res.text}')
+
+    def send_event(self, event: ExecutionEvent):
+        """POST execution event"""
+        event_json: str = to_compact_json_str([event])
+        res = self.__do_send(event_json, self.events_url)
+        logging.info(f'execution event sent: {res.status_code}, {res.text}')
+
+    def __do_send(self, json_payload: str, url: str) -> Response:
+        res = requests.post(url=url, data=json_payload, headers={HttpHeaders.CONTENT_TYPE: self.content_type})
+        res.raise_for_status()
+        return res

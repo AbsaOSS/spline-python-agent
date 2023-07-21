@@ -21,7 +21,12 @@ from typing import Any
 from spline_agent.lineage_model import Lineage, ExecutionPlan, ExecutionEvent
 
 
-def to_json_str(obj: Any):
+def to_compact_json_str(obj: Any):
+    json_str = json.dumps(obj, cls=LineageEncoder, indent=0)
+    return json_str
+
+
+def to_pretty_json_str(obj: Any):
     json_str = json.dumps(obj, cls=LineageEncoder, indent=4)
     return json_str
 

@@ -11,10 +11,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import logging
 
 import spline_agent
 from spline_agent import get_tracking_context
 from spline_agent.context import WriteMode
+from spline_agent.dispatchers.http_dispatcher import HttpLineageDispatcher
 from spline_agent.lineage_model import NameAndVersion
 
 
@@ -22,7 +24,8 @@ from spline_agent.lineage_model import NameAndVersion
     name='My awesome python app',
     inputs=('{data_url_1}', '{data_url_2}'),
     output='{result_url}',
-    system_info=NameAndVersion(name='name of my data processing engine', version='0.0.0')
+    system_info=NameAndVersion(name='name of my data processing engine', version='0.0.0'),
+    dispatcher=HttpLineageDispatcher(base_url='https://example.com/spline/rest/producer'),
 )
 def main(data_url_1: str, data_url_2: str, result_url: str):
     """
@@ -41,16 +44,16 @@ def main(data_url_1: str, data_url_2: str, result_url: str):
     _dummy_write(result_url, result_data)
     get_tracking_context().write_mode = WriteMode.OVERWRITE
 
-    print('DONE')
+    logging.info('DONE')
 
 
 def _dummy_read(url: str):
-    print(f'reading from {url} ... OK')
+    logging.info(f'reading from {url} ... OK')
     return "dummy data"
 
 
 def _dummy_write(url: str, data):
-    print(f'writing to {url} ... OK')
+    logging.info(f'writing to {url} ... OK')
     pass
 
 
@@ -59,6 +62,7 @@ def _do_some_magic(a, b):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main(
         data_url_1='s3://my-bucket-name/data/input.csv',
         data_url_2='hdfs://my-cluster/data/files/datafile.txt',
