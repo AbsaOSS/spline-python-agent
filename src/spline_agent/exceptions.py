@@ -12,3 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+class LineageContextNotInitialized(BaseException):
+    """ Lineage harvesting context was not properly initialized"""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class LineageContextIncompleteError(BaseException):
+    """ Required property is missing from the lineage harvesting context """
+
+    def __init__(self, property_name: str):
+        self.property_name = property_name
+        super().__init__(f"Required property `{property_name}` wasn't specified")
