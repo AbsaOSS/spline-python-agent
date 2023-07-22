@@ -65,7 +65,7 @@ class Operations:
 
 @dataclass
 class ExecutionPlan:
-    id: UUID
+    id: Optional[UUID]
     name: Optional[str]
     systemInfo: NameAndVersion
     agentInfo: NameAndVersion

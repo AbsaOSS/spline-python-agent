@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import importlib.metadata
+from uuid import UUID
 
 import spline_agent
 from spline_agent.lineage_model import NameAndVersion
@@ -21,3 +22,5 @@ AGENT_INFO = NameAndVersion(
     name='spline-python-agent',
     version=importlib.metadata.version(spline_agent.__name__)
 )
+
+EXECUTION_PLAN_NAMESPACE: UUID = UUID('475196d0-16ca-4cba-aec7-c9f2ddd9326c')
