@@ -92,7 +92,7 @@ def test_decorator_with_default_args__no_capture_lineage():
     mock_dispatcher.send_event.assert_not_called()
 
 
-def test_decorator_with_provided_args___capture_lineage():
+def test_decorator_with_provided_args__capture_lineage():
     # prepare
     mock_dispatcher: LineageDispatcherMock = create_autospec(LineageDispatcher)
     ctx: Optional[LineageTrackingContext] = None
