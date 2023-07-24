@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import inspect
+import logging
 import time
 from functools import wraps
 from typing import Optional, Union, Mapping, Any
@@ -20,15 +21,18 @@ from urllib.parse import urlparse
 
 from spline_agent.context import with_context_do, LineageTrackingContext, WriteMode
 from spline_agent.datasources import DataSource
+from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.exceptions import LineageContextIncompleteError
 from spline_agent.harvester import harvest_lineage
-from spline_agent.json_serde import to_json_str
 from spline_agent.lineage_model import NameAndVersion, DurationNs
+
+logger = logging.getLogger(__name__)
 
 DsParamExpr = Union[str, DataSource]
 
 
 def track_lineage(
+        dispatcher: LineageDispatcher,
         name: Optional[str] = None,
         inputs: tuple[DsParamExpr, ...] = (),
         output: Optional[DsParamExpr] = None,
@@ -95,11 +99,12 @@ def track_lineage(
                 # obtain lineage model
                 lineage = harvest_lineage(ctx, func, duration_ns, error)
 
-                # todo: send the lineage to the dispatcher (issue #2)
-                print(f'[SPLINE] Captured lineage: \n\n{to_json_str(lineage)}\n\n')
+                # dispatch captured lineage
+                dispatcher.send_plan(lineage.plan)
+                dispatcher.send_event(lineage.event)
 
             except LineageContextIncompleteError as e:
-                print(f'[WARNING] Lineage skipped: {e.__str__()}')
+                logger.warning(f'Lineage skipped: {e.__str__()}')
 
             return func_res
 

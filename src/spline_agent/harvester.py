@@ -20,7 +20,7 @@ from typing import Callable
 from spline_agent.constants import AGENT_INFO, EXECUTION_PLAN_NAMESPACE
 from spline_agent.context import LineageTrackingContext, WriteMode
 from spline_agent.exceptions import LineageContextIncompleteError
-from spline_agent.json_serde import to_json_str
+from spline_agent.json_serde import to_compact_json_str
 from spline_agent.lineage_model import *
 from spline_agent.utils import current_time
 
@@ -70,7 +70,7 @@ def harvest_lineage(
         agentInfo=AGENT_INFO,
     )
 
-    plan.id = uuid.uuid5(EXECUTION_PLAN_NAMESPACE, to_json_str(plan))
+    plan.id = uuid.uuid5(EXECUTION_PLAN_NAMESPACE, to_compact_json_str(plan))
 
     event = ExecutionEvent(
         planId=plan.id,

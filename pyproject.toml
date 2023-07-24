@@ -9,8 +9,11 @@ authors = [
 [tool.poetry.dependencies]
 python = "^3.9"
 ordered-set = "^4.1.0"
+requests = "^2.31.0"
+http-constants = "^0.5.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
+types-requests = "^2.31.0.2"
 pytest = "^7.4.0"
 mypy = "^1.4.1"
 
@@ -24,3 +27,7 @@ pythonpath = "src"
 [tool.mypy]
 files = "."
 check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "http_constants.*"
+ignore_missing_imports = true
