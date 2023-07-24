@@ -19,6 +19,8 @@ from spline_agent.context import WriteMode
 from spline_agent.dispatchers.http_dispatcher import HttpLineageDispatcher
 from spline_agent.lineage_model import NameAndVersion
 
+logger = logging.getLogger(__name__)
+
 
 @spline_agent.track_lineage(
     name='My awesome python app',
@@ -44,16 +46,16 @@ def main(data_url_1: str, data_url_2: str, result_url: str):
     _dummy_write(result_url, result_data)
     get_tracking_context().write_mode = WriteMode.OVERWRITE
 
-    logging.info('DONE')
+    logger.info('DONE')
 
 
 def _dummy_read(url: str):
-    logging.info(f'reading from {url} ... OK')
+    logger.info(f'reading from {url} ... OK')
     return "dummy data"
 
 
 def _dummy_write(url: str, data):
-    logging.info(f'writing to {url} ... OK')
+    logger.info(f'writing to {url} ... OK')
     pass
 
 

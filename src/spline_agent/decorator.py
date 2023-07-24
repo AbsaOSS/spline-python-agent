@@ -26,6 +26,8 @@ from spline_agent.exceptions import LineageContextIncompleteError
 from spline_agent.harvester import harvest_lineage
 from spline_agent.lineage_model import NameAndVersion, DurationNs
 
+logger = logging.getLogger(__name__)
+
 DsParamExpr = Union[str, DataSource]
 
 
@@ -102,7 +104,7 @@ def track_lineage(
                 dispatcher.send_event(lineage.event)
 
             except LineageContextIncompleteError as e:
-                logging.warning(f'Lineage skipped: {e.__str__()}')
+                logger.warning(f'Lineage skipped: {e.__str__()}')
 
             return func_res
 

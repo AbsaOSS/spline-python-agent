@@ -25,13 +25,18 @@ class LoggingLineageDispatcher(LineageDispatcher):
     as a prettified JSON string, using the logging framework.
     """
 
-    def __init__(self, level: int = logging.INFO):
+    def __init__(
+            self,
+            level: int = logging.INFO,
+            logger: logging.Logger = logging.getLogger(__name__),
+    ):
         self.level = level
+        self.logger = logger
 
     def send_plan(self, plan: ExecutionPlan):
         plan_json: str = to_pretty_json_str(plan)
-        logging.log(self.level, f'Execution Plan: {plan_json}')
+        self.logger.log(self.level, f'Execution Plan: {plan_json}')
 
     def send_event(self, event: ExecutionEvent):
         event_json: str = to_pretty_json_str(event)
-        logging.log(self.level, f'Execution Event: {event_json}')
+        self.logger.log(self.level, f'Execution Event: {event_json}')

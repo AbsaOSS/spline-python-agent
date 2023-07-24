@@ -23,6 +23,8 @@ from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.json_serde import to_compact_json_str
 from spline_agent.lineage_model import ExecutionEvent, ExecutionPlan
 
+logger = logging.getLogger(__name__)
+
 SPLINE_PRODUCER_PLANS_PATH = 'execution-plans'
 SPLINE_PRODUCER_EVENTS_PATH = 'execution-events'
 SPLINE_PRODUCER_CONTENT_TYPE_VER_12 = 'application/vnd.absa.spline.producer.v1.2+json'
@@ -49,13 +51,13 @@ class HttpLineageDispatcher(LineageDispatcher):
         """POST execution plan"""
         plan_json: str = to_compact_json_str(plan)
         res = self.__do_send(plan_json, self.plans_url)
-        logging.info(f'execution plan sent: {res.status_code}, {res.text}')
+        logger.info(f'execution plan sent: {res.status_code}, {res.text}')
 
     def send_event(self, event: ExecutionEvent):
         """POST execution event"""
         event_json: str = to_compact_json_str([event])
         res = self.__do_send(event_json, self.events_url)
-        logging.info(f'execution event sent: {res.status_code}, {res.text}')
+        logger.info(f'execution event sent: {res.status_code}, {res.text}')
 
     def __do_send(self, json_payload: str, url: str) -> Response:
         res = requests.post(url=url, data=json_payload, headers={HttpHeaders.CONTENT_TYPE: self.content_type})
