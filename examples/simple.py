@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import logging
 
 import spline_agent
@@ -20,6 +21,7 @@ from spline_agent.dispatchers.http_dispatcher import HttpLineageDispatcher
 from spline_agent.lineage_model import NameAndVersion
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 @spline_agent.track_lineage(
@@ -55,7 +57,7 @@ def _dummy_read(url: str):
 
 
 def _dummy_write(url: str, data):
-    logger.info(f'writing to {url} ... OK')
+    logger.info(f'writing [{data}] to {url} ... OK')
     pass
 
 
@@ -64,7 +66,6 @@ def _do_some_magic(a, b):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     main(
         data_url_1='s3://my-bucket-name/data/input.csv',
         data_url_2='hdfs://my-cluster/data/files/datafile.txt',

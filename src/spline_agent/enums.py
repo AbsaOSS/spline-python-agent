@@ -12,16 +12,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-class LineageTrackingContextNotInitialized(BaseException):
-    """ Lineage harvesting context was not properly initialized"""
-
-    def __init__(self, message: str):
-        super().__init__(message)
+from enum import Enum
 
 
-class LineageTrackingContextIncompleteError(BaseException):
-    """ Required property is missing from the lineage harvesting context """
+class WriteMode(Enum):
+    OVERWRITE = 0
+    APPEND = 1
 
-    def __init__(self, property_name: str):
-        self.property_name = property_name
-        super().__init__(f"Required property '{property_name}' wasn't specified")
+
+class SplineMode(Enum):
+    DISABLED = 0  # Fully disabled, the decorator is no-op.
+    ENABLED = 1  # Fully enabled
+    BYPASS = 2  # The context management is enabled (to avoid None errors in client code), but the side effect is zero.

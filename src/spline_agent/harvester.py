@@ -19,10 +19,10 @@ from typing import Callable
 
 from spline_agent.constants import AGENT_INFO, EXECUTION_PLAN_NAMESPACE
 from spline_agent.context import LineageTrackingContext, WriteMode
-from spline_agent.exceptions import LineageContextIncompleteError
+from spline_agent.exceptions import LineageTrackingContextIncompleteError
 from spline_agent.json_serde import to_compact_json_str
 from spline_agent.lineage_model import *
-from spline_agent.utils import current_time
+from spline_agent.commons.utils import current_time
 
 
 def harvest_lineage(
@@ -31,18 +31,18 @@ def harvest_lineage(
         duration_ns: Optional[DurationNs],
         error: Optional[Any]) -> Lineage:
     if ctx.output is None:
-        raise LineageContextIncompleteError('output')
+        raise LineageTrackingContextIncompleteError('output')
     if ctx.write_mode is None:
-        raise LineageContextIncompleteError('write_mode')
+        raise LineageTrackingContextIncompleteError('write_mode')
     if ctx.system_info is None:
-        raise LineageContextIncompleteError('system_info')
+        raise LineageTrackingContextIncompleteError('system_info')
 
     cur_time = current_time()
 
     write_operation = WriteOperation(
         id='op-0',
         childIds=('op-1',),
-        name='Write',  # todo: put something more meaningful there, maybe 'write to {ds.type}'
+        name='Write',  # todo: put something more meaningful here, maybe 'write to {ds.type}' (issue #15)
         outputSource=ctx.output.url,
         append=ctx.write_mode == WriteMode.APPEND,
     )
@@ -51,7 +51,7 @@ def harvest_lineage(
         ReadOperation(
             id=f'op-{i + 2}',
             inputSources=(inp.url,),
-            name='Read',  # todo: put something more meaningful there, maybe 'read from {ds.type}'
+            name='Read',  # todo: put something more meaningful here, maybe 'read from {ds.type}' (issue #15)
         ) for i, inp in zip(range(len(ctx.inputs)), ctx.inputs))
 
     data_operations = _process_func(ctx, entry_func)
@@ -88,6 +88,7 @@ def _process_func(ctx: LineageTrackingContext, func: Callable) -> tuple[DataOper
     func_source_code = inspect.getsource(func)
 
     func_name = func.__name__
+    # noinspection PyUnresolvedReferences
     module_name = func.__module__
     file_name = inspect.getfile(func)
 

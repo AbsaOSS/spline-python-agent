@@ -23,6 +23,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = "src"
+log_cli = true
+log_cli_level = "INFO"
 
 [tool.mypy]
 files = "."
