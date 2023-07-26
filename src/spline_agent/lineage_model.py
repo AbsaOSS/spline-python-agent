@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Optional, Any, Mapping
 from uuid import UUID
 
 # Timestamp since the Unix epoch in milliseconds
@@ -53,7 +53,7 @@ class DataOperation:
     id: OperationId
     childIds: tuple[OperationId, ...]
     name: str
-    extra: dict
+    extra: Mapping[str, Any]
 
 
 @dataclass

@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Mapping
 
 from .configuration import Configuration
 
@@ -23,7 +23,7 @@ class DictConfiguration(Configuration):
     In-memory implementation of Configuration
     """
 
-    def __init__(self, settings: dict[str, Any]) -> None:
+    def __init__(self, settings: Mapping[str, Any]) -> None:
         self.settings = MappingProxyType(settings)
 
     def __getitem__(self, key: str) -> Any:
