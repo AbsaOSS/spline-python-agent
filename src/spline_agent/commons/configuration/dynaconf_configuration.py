@@ -25,13 +25,13 @@ class DynaconfConfiguration(Configuration):
     """
 
     def __init__(self, settings: Dynaconf) -> None:
-        self.settings = settings
+        self.__settings = settings
 
     def __getitem__(self, key: str) -> Any:
-        return self.settings.get(key)
+        return self.__settings.get(key)
 
     def __contains__(self, key: str) -> bool:
-        return key in self.settings
+        return key in self.__settings
 
     def keys(self) -> set[str]:
-        return {k.lower() for k in self.settings}
+        return {k.lower() for k in self.__settings}

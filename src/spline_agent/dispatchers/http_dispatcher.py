@@ -43,23 +43,23 @@ class HttpLineageDispatcher(LineageDispatcher):
                  content_type: str = SPLINE_PRODUCER_CONTENT_TYPE_VER_12,
                  ):
         base_plan_with_slash = f'{base_url}/'
-        self.plans_url = urljoin(base_plan_with_slash, plans_path)
-        self.events_url = urljoin(base_plan_with_slash, events_path)
-        self.content_type = content_type
+        self.__plans_url = urljoin(base_plan_with_slash, plans_path)
+        self.__events_url = urljoin(base_plan_with_slash, events_path)
+        self.__content_type = content_type
 
     def send_plan(self, plan: ExecutionPlan):
         """POST execution plan"""
         plan_json: str = to_compact_json_str(plan)
-        res = self.__do_send(plan_json, self.plans_url)
+        res = self.__do_send(plan_json, self.__plans_url)
         logger.info(f'execution plan sent: {res.status_code}, {res.text}')
 
     def send_event(self, event: ExecutionEvent):
         """POST execution event"""
         event_json: str = to_compact_json_str([event])
-        res = self.__do_send(event_json, self.events_url)
+        res = self.__do_send(event_json, self.__events_url)
         logger.info(f'execution event sent: {res.status_code}, {res.text}')
 
     def __do_send(self, json_payload: str, url: str) -> Response:
-        res = requests.post(url=url, data=json_payload, headers={HttpHeaders.CONTENT_TYPE: self.content_type})
+        res = requests.post(url=url, data=json_payload, headers={HttpHeaders.CONTENT_TYPE: self.__content_type})
         res.raise_for_status()
         return res

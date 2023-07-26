@@ -20,7 +20,7 @@ from spline_agent.commons.proxy import ObservingProxy, MemberType
 
 class Foo:
     def __init__(self):
-        self._my_prop = None
+        self.__my_prop = None
 
     # noinspection PyMethodMayBeStatic
     def my_plus(self, a: int, b: int):
@@ -28,11 +28,11 @@ class Foo:
 
     @property
     def my_prop(self) -> Any:
-        return self._my_prop
+        return self.__my_prop
 
     @my_prop.setter
     def my_prop(self, value: Any):
-        self._my_prop = value
+        self.__my_prop = value
 
 
 def test_method_call_interception():

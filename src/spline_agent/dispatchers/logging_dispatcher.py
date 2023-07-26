@@ -30,13 +30,13 @@ class LoggingLineageDispatcher(LineageDispatcher):
             level: int = logging.INFO,
             logger: logging.Logger = logging.getLogger(__name__),
     ):
-        self.level = level
-        self.logger = logger
+        self.__level = level
+        self.__logger = logger
 
     def send_plan(self, plan: ExecutionPlan):
         plan_json: str = to_pretty_json_str(plan)
-        self.logger.log(self.level, f'Execution Plan: {plan_json}')
+        self.__logger.log(self.__level, f'Execution Plan: {plan_json}')
 
     def send_event(self, event: ExecutionEvent):
         event_json: str = to_pretty_json_str(event)
-        self.logger.log(self.level, f'Execution Event: {event_json}')
+        self.__logger.log(self.__level, f'Execution Event: {event_json}')

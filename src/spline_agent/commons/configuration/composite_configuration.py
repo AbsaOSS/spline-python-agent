@@ -25,19 +25,19 @@ class CompositeConfiguration(Configuration):
 
     def __init__(self, *configs: Configuration) -> None:
         assert configs
-        self.configs = configs
+        self.__configs = configs
 
     def __getitem__(self, key: str) -> Any:
-        for config in self.configs:
+        for config in self.__configs:
             if key in config:
                 return config.__getitem__(key)
         return None
 
     def __contains__(self, key: str) -> bool:
-        return any(key in config for config in self.configs)
+        return any(key in config for config in self.__configs)
 
     def keys(self) -> set[str]:
         all_keys = set()
-        for config in self.configs:
+        for config in self.__configs:
             all_keys.update(config.keys())
         return set(all_keys)

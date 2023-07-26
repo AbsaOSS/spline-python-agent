@@ -24,13 +24,13 @@ class DictConfiguration(Configuration):
     """
 
     def __init__(self, settings: Mapping[str, Any]) -> None:
-        self.settings = MappingProxyType(settings)
+        self.__settings = MappingProxyType(settings)
 
     def __getitem__(self, key: str) -> Any:
-        return self.settings.get(key)
+        return self.__settings.get(key)
 
     def __contains__(self, key: str) -> bool:
-        return key in self.settings
+        return key in self.__settings
 
     def keys(self) -> set[str]:
-        return set(self.settings.keys())
+        return set(self.__settings.keys())
