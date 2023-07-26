@@ -27,6 +27,13 @@ from spline_agent.lineage_model import NameAndVersion
 from .mocks import LineageDispatcherMock
 
 
+def test_error_when_decorator_is_not_used_properly():
+    with pytest.raises(TypeError, match=fr"@{track_lineage.__name__}\(\) decorator should be used with parentheses"):
+        # missing ()
+        @track_lineage  # type: ignore
+        def my_func(): pass
+
+
 def test_decorator_calls_func_and_returns_value():
     # prepare
     dummy_dispatcher = create_autospec(LineageDispatcher)

@@ -43,12 +43,13 @@ def track_lineage(
         dispatcher: Optional[LineageDispatcher] = None,
 ):
     # check if the decorator is used correctly
-    if callable(name):
+
+    first_arg = locals()[next(iter(inspect.signature(track_lineage).parameters.keys()))]
+    if callable(first_arg):
         # it happens when the user forgets parenthesis when using a parametrized decorator,
-        # so the decorated function unintentionally becomes the value for the 1st positional parameter
-        # that in this case happens to be `name`.
-        decor_name = inspect.currentframe().f_code.co_name
-        raise TypeError(f'@{decor_name}() decorator should be used with parentheses, even if no arguments are provided')
+        # so the decorated function unintentionally becomes the value for the 1st positional parameter.
+        raise TypeError(
+            f'@{track_lineage.__name__}() decorator should be used with parentheses, even if no arguments are provided')
 
     if mode is SplineMode.ENABLED:
         logging.info('Lineage tracking is ENABLED')
