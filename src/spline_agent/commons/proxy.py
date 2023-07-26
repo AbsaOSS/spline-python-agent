@@ -52,8 +52,8 @@ class ObservingProxy:
 
     def __init__(self, target: Target, observer: InvocationObserver[Target]) -> None:
         # We're using `object.__setattr__(self, 'xxx', yyy)` instead of `self.xxx=yyy`
-        # as because of overridden magic method `__setattr__` the name `self` in the
-        # context of the latter expression effectively refers to the `_target` instance.
+        # as because of overridden magic methods `__get/setattr__`, when the `xxx` attribute
+        # isn't yet in the instance dictionary, the latter expression would cause infinite recursion.
         object.__setattr__(self, f'_{self.__class__.__name__}__target', target)
         object.__setattr__(self, f'_{self.__class__.__name__}__observer', observer)
 
