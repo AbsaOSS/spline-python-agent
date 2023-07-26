@@ -25,15 +25,31 @@
 #  limitations under the License.
 
 import os
+from typing import Any
 from unittest.mock import create_autospec
 
+import pytest
 from dynaconf import Dynaconf
 
 from spline_agent.commons.configuration.composite_configuration import CompositeConfiguration
 from spline_agent.commons.configuration.configuration import Configuration
 from spline_agent.commons.configuration.dict_configuration import DictConfiguration
 from spline_agent.commons.configuration.dynaconf_configuration import DynaconfConfiguration
+from spline_agent.exceptions import ConfigurationError
 from ...mocks import ConfigurationMock
+
+
+def _assert_item(conf: Configuration, key: str, expected: Any):
+    assert key in conf
+    assert conf.get(key) == expected
+    assert conf[key] == expected
+
+
+def _assert_no_item(conf: Configuration, key: str):
+    assert key not in conf
+    assert conf.get(key) is None
+    with pytest.raises(ConfigurationError, match=fr': {key}'):
+        _ = conf[key]
 
 
 def test_dict_configuration():
@@ -49,13 +65,11 @@ def test_dict_configuration():
     conf = DictConfiguration(test_dict)
 
     # verify
-    assert 'a' in conf and conf['a'] == 1
-    assert 'b' in conf and conf['b']
-    assert 'c' in conf and conf['c'] == 'Hello'
-    assert 'd' in conf and conf['d'] == [10, 20]
-
-    assert 'nah' not in conf
-
+    _assert_item(conf, 'a', 1)
+    _assert_item(conf, 'b', True)
+    _assert_item(conf, 'c', 'Hello')
+    _assert_item(conf, 'd', [10, 20])
+    _assert_no_item(conf, 'nah')
     assert conf.keys() == {'a', 'b', 'c', 'd'}
 
 
@@ -67,14 +81,12 @@ def test_dynaconf_configuration():
     conf = DynaconfConfiguration(test_settings)
 
     # verify
-    assert 'a' in conf and conf['a'] == 1
-    assert 'b' in conf and conf['b']
-    assert 'c' in conf and conf['c'] == 'Hello'
-    assert 'd' in conf and conf['d'] == [10, 20]
-    assert 'e' in conf and conf['e'] == {'foo': 'bar'}
-
-    assert 'nah' not in conf
-
+    _assert_item(conf, 'a', 1)
+    _assert_item(conf, 'b', True)
+    _assert_item(conf, 'c', 'Hello')
+    _assert_item(conf, 'd', [10, 20])
+    _assert_item(conf, 'e', {'foo': 'bar'})
+    _assert_no_item(conf, 'nah')
     assert {'a', 'b', 'c', 'd', 'e'}.issubset(conf.keys())
 
 
@@ -95,21 +107,21 @@ def test_composite_configuration():
     conf_1_mock.keys.return_value = test_dict_1.keys()
     conf_1_mock.__contains__.side_effect = test_dict_1.__contains__
     conf_1_mock.__getitem__.side_effect = test_dict_1.get
+    conf_1_mock.get.side_effect = test_dict_1.get
 
     conf_2_mock: ConfigurationMock = create_autospec(Configuration)
     conf_2_mock.keys.return_value = test_dict_2.keys()
     conf_2_mock.__contains__.side_effect = test_dict_2.__contains__
     conf_2_mock.__getitem__.side_effect = test_dict_2.get
+    conf_2_mock.get.side_effect = test_dict_2.get
 
     # execute
     conf = CompositeConfiguration(conf_1_mock, conf_2_mock)
 
     # verify
-    assert 'a' in conf and conf['a'] == 1
-    assert 'b' in conf and conf['b']
-    assert 'c' in conf and conf['c'] == 1
-    assert 'd' in conf and conf['d'] == [2, 22]
-
-    assert 'nah' not in conf
-
+    _assert_item(conf, 'a', 1)
+    _assert_item(conf, 'b', 2)
+    _assert_item(conf, 'c', 1)
+    _assert_item(conf, 'd', [2, 22])
+    _assert_no_item(conf, 'nah')
     assert conf.keys() == {'a', 'b', 'c', 'd'}

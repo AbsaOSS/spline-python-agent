@@ -12,14 +12,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Any
+from typing import Any, Type, Optional
 
 from dynaconf import Dynaconf
 
-from .configuration import Configuration
+from .base_configuration import BaseConfiguration
+from .configuration import T
 
 
-class DynaconfConfiguration(Configuration):
+class DynaconfConfiguration(BaseConfiguration):
     """
     A Configuration adapter for Dynaconf
     """
@@ -27,11 +28,8 @@ class DynaconfConfiguration(Configuration):
     def __init__(self, settings: Dynaconf) -> None:
         self.__settings = settings
 
-    def __getitem__(self, key: str) -> Any:
+    def get(self, key: str, typ: Type[T] = Any) -> Optional[T]:
         return self.__settings.get(key)
-
-    def __contains__(self, key: str) -> bool:
-        return key in self.__settings
 
     def keys(self) -> set[str]:
         return {k.lower() for k in self.__settings}

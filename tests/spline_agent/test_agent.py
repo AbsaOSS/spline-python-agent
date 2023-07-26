@@ -22,13 +22,13 @@ from spline_agent.datasources import DataSource
 from spline_agent.decorator import track_lineage
 from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.enums import SplineMode
-from spline_agent.exceptions import LineageTrackingContextNotInitialized, LineageTrackingContextIncompleteError
+from spline_agent.exceptions import LineageTrackingContextNotInitializedError, LineageTrackingContextIncompleteError
 from spline_agent.lineage_model import NameAndVersion
 from .mocks import LineageDispatcherMock
 
 
 def test_error_when_decorator_is_not_used_properly():
-    with pytest.raises(TypeError, match=fr"@{track_lineage.__name__}\(\) decorator should be used with parentheses"):
+    with pytest.raises(TypeError, match=fr'@{track_lineage.__name__}\(\) decorator should be used with parentheses'):
         # missing ()
         @track_lineage  # type: ignore
         def my_func(): pass
@@ -65,7 +65,7 @@ def test_context_mgmt():
 
     # verify pre-conditions:
     # - the context does not exist yet outside decorated function
-    with pytest.raises(LineageTrackingContextNotInitialized):
+    with pytest.raises(LineageTrackingContextNotInitializedError):
         get_tracking_context()
 
     # execute
@@ -75,7 +75,7 @@ def test_context_mgmt():
     # - the context used to exist inside decorated function
     assert captured_ctx is not None
     # - the context does not exist anymore outside decorated function
-    with pytest.raises(LineageTrackingContextNotInitialized):
+    with pytest.raises(LineageTrackingContextNotInitializedError):
         get_tracking_context()
 
 
@@ -123,7 +123,7 @@ def test_decorator_mode_disabled__with_context_access():
         get_tracking_context()
 
     # execute and verify
-    with pytest.raises(LineageTrackingContextNotInitialized):
+    with pytest.raises(LineageTrackingContextNotInitializedError):
         test_untracked_func()
 
 

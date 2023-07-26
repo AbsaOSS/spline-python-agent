@@ -12,23 +12,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from types import MappingProxyType
-from typing import Any, Mapping, Type, Optional
+from abc import ABC
+from typing import Any, Optional
 
-from . import T
-from .base_configuration import BaseConfiguration
+from .configuration import Configuration
+from ...exceptions import ConfigurationError
 
 
-class DictConfiguration(BaseConfiguration):
+class BaseConfiguration(Configuration, ABC):
     """
-    In-memory implementation of Configuration
+    Base implementation for other Configuration classes
     """
 
-    def __init__(self, settings: Mapping[str, Any]) -> None:
-        self.__settings = MappingProxyType(settings)
+    def __getitem__(self, key: str) -> Any:
+        value: Optional[Any] = self.get(key)
+        if value is None:
+            raise ConfigurationError(f'Configuration property not found: {key}')
+        return value
 
-    def get(self, key: str, typ: Type[T] = Any) -> Optional[T]:
-        return self.__settings.get(key)
-
-    def keys(self) -> set[str]:
-        return set(self.__settings.keys())
+    def __contains__(self, key: str) -> bool:
+        return key in self.keys()

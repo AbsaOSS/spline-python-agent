@@ -12,12 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Any
+from typing import Any, Type, Optional
 
+from .base_configuration import BaseConfiguration
 from .configuration import Configuration
+from .configuration import T
 
 
-class CompositeConfiguration(Configuration):
+class CompositeConfiguration(BaseConfiguration):
     """
     Composite implementation that merges one or more other Configuration instances.
     When looking up by a key, the first value found is returned. The search is depth-first.
@@ -27,10 +29,10 @@ class CompositeConfiguration(Configuration):
         assert configs
         self.__configs = configs
 
-    def __getitem__(self, key: str) -> Any:
+    def get(self, key: str, typ: Type[T] = Any) -> Optional[T]:
         for config in self.__configs:
             if key in config:
-                return config.__getitem__(key)
+                return config.get(key)
         return None
 
     def __contains__(self, key: str) -> bool:

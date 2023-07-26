@@ -20,7 +20,7 @@ from ordered_set import OrderedSet
 
 from spline_agent.datasources import DataSource
 from spline_agent.enums import WriteMode
-from spline_agent.exceptions import LineageTrackingContextNotInitialized
+from spline_agent.exceptions import LineageTrackingContextNotInitializedError
 from spline_agent.lineage_model import NameAndVersion
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ def get_tracking_context() -> LineageTrackingContext:
     if ctx is None:
         this_fn_name = get_tracking_context.__name__
         decorator_name = track_lineage.__name__
-        raise LineageTrackingContextNotInitialized(
+        raise LineageTrackingContextNotInitializedError(
             f"The function '{this_fn_name}()' must be called from inside a function, that itself or any of its callers "
             f"is decorated with the '@{decorator_name}()' decorator. "
             f"Also the Spline mode must not be DISABLED. (If you want to disable Spline temporarily use mode BYPASS)")

@@ -13,7 +13,9 @@
 #  limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TypeVar, Type, Optional
+
+T = TypeVar('T')
 
 
 class Configuration(ABC):
@@ -24,7 +26,14 @@ class Configuration(ABC):
     @abstractmethod
     def __getitem__(self, key: str) -> Any:
         """
-        Get a value by key
+        Get a value by key, or throw an error if not found
+        """
+        pass
+
+    @abstractmethod
+    def get(self, key: str, typ: Type[T] = Any) -> Optional[T]:
+        """
+        Returns a value by key, or None is not found
         """
         pass
 

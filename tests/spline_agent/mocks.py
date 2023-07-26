@@ -50,6 +50,10 @@ class ConfigurationMock(Configuration):
 
     @property
     @abstractmethod
+    def get(self) -> Mock: pass
+
+    @property
+    @abstractmethod
     def __contains__(self) -> Mock: pass
 
     @property
