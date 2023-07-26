@@ -11,6 +11,7 @@ python = "^3.9"
 ordered-set = "^4.1.0"
 requests = "^2.31.0"
 http-constants = "^0.5.0"
+dynaconf = "^3.2.0"
 
 [tool.poetry.group.dev.dependencies]
 types-requests = "^2.31.0.2"
@@ -32,4 +33,9 @@ check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = "http_constants.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# this should be fixed in Dynaconf ver 4.0.0. See https://github.com/dynaconf/dynaconf/issues/448
+module = "dynaconf.*"
 ignore_missing_imports = true

@@ -17,7 +17,6 @@ from unittest.mock import create_autospec
 
 import pytest
 
-from mocks import LineageDispatcherMock
 from spline_agent.context import WriteMode, get_tracking_context, LineageTrackingContext
 from spline_agent.datasources import DataSource
 from spline_agent.decorator import track_lineage
@@ -25,6 +24,7 @@ from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.enums import SplineMode
 from spline_agent.exceptions import LineageTrackingContextNotInitialized, LineageTrackingContextIncompleteError
 from spline_agent.lineage_model import NameAndVersion
+from .mocks import LineageDispatcherMock
 
 
 def test_decorator_calls_func_and_returns_value():
@@ -123,8 +123,6 @@ def test_decorator_mode_disabled__with_context_access():
 def test_decorator_with_default_args__no_capture_lineage():
     # prepare
     mock_dispatcher: LineageDispatcherMock = create_autospec(LineageDispatcher)
-    dummy_output = DataSource('dummy')
-    dummy_si = NameAndVersion(name="dummy", version="dummy")
 
     ctx: Optional[LineageTrackingContext] = None
 

@@ -25,8 +25,9 @@
 #  limitations under the License.
 
 from abc import abstractmethod
-from unittest.mock import NonCallableMock
+from unittest.mock import NonCallableMock, Mock
 
+from spline_agent.commons.configuration import Configuration
 from spline_agent.dispatcher import LineageDispatcher
 
 
@@ -39,3 +40,18 @@ class LineageDispatcherMock(LineageDispatcher):
     @property
     @abstractmethod
     def send_event(self) -> NonCallableMock: pass
+
+
+# noinspection PyMethodOverriding
+class ConfigurationMock(Configuration):
+    @property
+    @abstractmethod
+    def __getitem__(self) -> Mock: pass
+
+    @property
+    @abstractmethod
+    def __contains__(self) -> Mock: pass
+
+    @property
+    @abstractmethod
+    def keys(self) -> Mock: pass
