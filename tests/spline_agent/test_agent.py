@@ -133,7 +133,7 @@ def test_decorator_with_default_args__no_capture_lineage():
 
     ctx: Optional[LineageTrackingContext] = None
 
-    @track_lineage()
+    @track_lineage(dispatcher=mock_dispatcher)
     def test_func():
         nonlocal ctx
         ctx = get_tracking_context()

@@ -12,23 +12,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import re
-import time
-
-from spline_agent.lineage_model import Timestamp
+from spline_agent.commons.utils import camel_to_snake
 
 
-def current_time() -> Timestamp:
-    """
-    Current time since Epoch is millis
-    """
-    return int(round(time.time() * 1000))
-
-
-def camel_to_snake(s: str) -> str:
-    """
-    Converts string in CamelNotation to snake_notation
-    """
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
-    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
-    return s2.lower()
+def test_camel_to_snake():
+    assert camel_to_snake('A') == 'a'
+    assert camel_to_snake('A1') == 'a1'
+    assert camel_to_snake('A1B') == 'a1_b'
+    assert camel_to_snake('A1b') == 'a1b'
+    assert camel_to_snake('A1BC') == 'a1_bc'
+    assert camel_to_snake('A1Bc') == 'a1_bc'
+    assert camel_to_snake('A1bC') == 'a1b_c'
+    assert camel_to_snake('AB1') == 'ab1'
+    assert camel_to_snake('Ab1') == 'ab1'
+    assert camel_to_snake('MySuperDuperA1testString42One2THREE') == 'my_super_duper_a1test_string42_one2_three'
