@@ -15,3 +15,15 @@
 spline:
 
   mode: ENABLED
+
+  lineage_dispatcher:
+
+    console:
+      class_name: spline_agent.dispatchers.console_dispatcher.ConsoleLineageDispatcher
+
+    logging:
+      class_name: spline_agent.dispatchers.logging_dispatcher.LoggingLineageDispatcher
+      level: INFO
+
+    http:
+      class_name: spline_agent.dispatchers.http_dispatcher.HttpLineageDispatcher

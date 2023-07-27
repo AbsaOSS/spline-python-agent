@@ -1,5 +1,1 @@
-spline:
-  lineage_dispatcher:
-    type: console
-    console:
-      class_name: spline_agent.dispatchers.console_dispatcher.ConsoleLineageDispatcher
+spline.lineage_dispatcher.type: console
