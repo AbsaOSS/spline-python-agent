@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Any, Type, Optional
+from typing import Type, Optional
 
 from .base_configuration import BaseConfiguration
 from .configuration import Configuration
@@ -29,7 +29,7 @@ class CompositeConfiguration(BaseConfiguration):
         assert configs
         self.__configs = configs
 
-    def get(self, key: str, typ: Type[T] = Any) -> Optional[T]:
+    def get(self, key: str, typ: Optional[Type[T]] = None) -> Optional[T]:
         for config in self.__configs:
             if key in config:
                 return config.get(key)

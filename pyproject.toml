@@ -30,6 +30,7 @@ log_cli_level = "INFO"
 [tool.mypy]
 files = "."
 check_untyped_defs = true
+disable_error_code = ["type-abstract"]
 
 [[tool.mypy.overrides]]
 module = "http_constants.*"

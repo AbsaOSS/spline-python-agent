@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Any, Type, Optional
+from typing import Type, Optional
 
 from dynaconf import Dynaconf
 
@@ -28,7 +28,7 @@ class DynaconfConfiguration(BaseConfiguration):
     def __init__(self, settings: Dynaconf) -> None:
         self.__settings = settings
 
-    def get(self, key: str, typ: Type[T] = Any) -> Optional[T]:
+    def get(self, key: str, typ: Optional[Type[T]] = None) -> Optional[T]:
         return self.__settings.get(key)
 
     def keys(self) -> set[str]:

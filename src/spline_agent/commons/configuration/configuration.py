@@ -31,7 +31,7 @@ class Configuration(ABC):
         pass
 
     @abstractmethod
-    def get(self, key: str, typ: Type[T] = Any) -> Optional[T]:
+    def get(self, key: str, typ: Optional[Type[T]] = None) -> Optional[T]:
         """
         Returns a value by key, or None is not found
         """

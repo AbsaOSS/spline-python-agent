@@ -27,7 +27,7 @@ class DictConfiguration(BaseConfiguration):
     def __init__(self, settings: Mapping[str, Any]) -> None:
         self.__settings = MappingProxyType(settings)
 
-    def get(self, key: str, typ: Type[T] = Any) -> Optional[T]:
+    def get(self, key: str, typ: Optional[Type[T]] = None) -> Optional[T]:
         return self.__settings.get(key)
 
     def keys(self) -> set[str]:
