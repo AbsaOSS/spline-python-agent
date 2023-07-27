@@ -14,11 +14,15 @@
 
 import inspect
 import logging
+import os
 import time
 from functools import wraps
 from typing import Optional, Union, Mapping, Any, cast, Callable
 from urllib.parse import urlparse
 
+from dynaconf import Dynaconf
+
+from spline_agent.commons.configuration import Configuration, DynaconfConfiguration
 from spline_agent.commons.proxy import ObservingProxy
 from spline_agent.context import with_context_do, LineageTrackingContext, WriteMode
 from spline_agent.datasources import DataSource
@@ -27,6 +31,7 @@ from spline_agent.enums import SplineMode
 from spline_agent.exceptions import LineageTrackingContextIncompleteError
 from spline_agent.harvester import harvest_lineage
 from spline_agent.lineage_model import NameAndVersion, DurationNs
+from spline_agent.object_factory import ObjectFactory
 
 logger = logging.getLogger(__name__)
 
@@ -34,16 +39,19 @@ DsParamExpr = Union[str, DataSource]
 
 
 def track_lineage(
-        mode: SplineMode = SplineMode.ENABLED,
+        mode: Optional[SplineMode] = None,
         name: Optional[str] = None,
         inputs: tuple[DsParamExpr, ...] = (),
         output: Optional[DsParamExpr] = None,
         write_mode: Optional[WriteMode] = None,
         system_info: Optional[NameAndVersion] = None,
         dispatcher: Optional[LineageDispatcher] = None,
+        config: Configuration = DynaconfConfiguration(Dynaconf(settings_files=[
+            f'{os.path.dirname(__file__)}/spline.default.yaml',
+            f'{os.getcwd()}/spline.yaml',
+        ])),
 ):
     # check if the decorator is used correctly
-
     first_arg = locals()[next(iter(inspect.signature(track_lineage).parameters.keys()))]
     if callable(first_arg):
         # it happens when the user forgets parenthesis when using a parametrized decorator,
@@ -51,15 +59,25 @@ def track_lineage(
         raise TypeError(
             f'@{track_lineage.__name__}() decorator should be used with parentheses, even if no arguments are provided')
 
+    # determine mode
+    mode = mode if mode is not None else SplineMode[config['spline.mode']]
+
+    # proceed according to the mode
     if mode is SplineMode.ENABLED:
         logging.info('Lineage tracking is ENABLED')
+        # obtain dispatcher from config if not provided
+        factory = ObjectFactory(config)
+        dispatcher = dispatcher if dispatcher is not None else factory.instantiate(LineageDispatcher)
         return lambda func: _active_decorator(func, name, inputs, output, write_mode, system_info, dispatcher)
+
     elif mode is SplineMode.BYPASS:
         logging.info('Lineage tracking is in BYPASS mode -- not captured')
         return _bypass_decorator
+
     elif mode is SplineMode.DISABLED:
         logging.info('Lineage tracking is DISABLED')
         return lambda _: _
+
     else:
         raise ValueError(f"Unknown Spline mode '{mode.name.rpartition('.')[-1]}'")
 
