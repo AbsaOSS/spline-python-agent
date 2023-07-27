@@ -44,10 +44,3 @@ class Configuration(ABC):
         Allows for syntax like `if key in config: ...`
         """
         pass
-
-    @abstractmethod
-    def keys(self) -> set[str]:
-        """
-        Returns a collection of all keys
-        """
-        pass

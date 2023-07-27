@@ -72,7 +72,6 @@ def test_dict_configuration():
     _assert_item(conf, 'c', 'Hello')
     _assert_item(conf, 'd', [10, 20])
     _assert_no_item(conf, 'nah')
-    assert conf.keys() == {'a', 'b', 'c', 'd'}
 
 
 def test_dynaconf_configuration__flat_structure():
@@ -92,8 +91,6 @@ def test_dynaconf_configuration__flat_structure():
 
     _assert_no_item(conf, 'nah')
 
-    assert {'x', 'a', 'm', 'p'}.issubset(conf.keys())
-
 
 def test_dynaconf_configuration__nested_structure():
     # prepare
@@ -112,8 +109,6 @@ def test_dynaconf_configuration__nested_structure():
 
     _assert_no_item(conf, 'nah')
 
-    assert {'a', 'c', 'e', 'h'}.issubset(conf.keys())
-
 
 def test_dynaconf_configuration__mixed_structure():
     # prepare
@@ -131,8 +126,6 @@ def test_dynaconf_configuration__mixed_structure():
     _assert_item(conf, 'J.K', {'l.m': [10, 20]})
 
     _assert_no_item(conf, 'nah')
-
-    assert {'a', 'd', 'g', 'j'}.issubset(conf.keys())
 
 
 def test_dynaconf_configuration__mixed_cases():
@@ -154,8 +147,6 @@ def test_dynaconf_configuration__mixed_cases():
 
     _assert_no_item(conf, 'nah')
 
-    assert {'a', 'd', 'g', 'j'}.issubset(conf.keys())
-
 
 def test_composite_configuration():
     # prepare
@@ -171,13 +162,11 @@ def test_composite_configuration():
     }
 
     conf_1_mock: ConfigurationMock = create_autospec(Configuration)
-    conf_1_mock.keys.return_value = test_dict_1.keys()
     conf_1_mock.__contains__.side_effect = test_dict_1.__contains__
     conf_1_mock.__getitem__.side_effect = test_dict_1.get
     conf_1_mock.get.side_effect = test_dict_1.get
 
     conf_2_mock: ConfigurationMock = create_autospec(Configuration)
-    conf_2_mock.keys.return_value = test_dict_2.keys()
     conf_2_mock.__contains__.side_effect = test_dict_2.__contains__
     conf_2_mock.__getitem__.side_effect = test_dict_2.get
     conf_2_mock.get.side_effect = test_dict_2.get
@@ -191,4 +180,3 @@ def test_composite_configuration():
     _assert_item(conf, 'c', 1)
     _assert_item(conf, 'd', [2, 22])
     _assert_no_item(conf, 'nah')
-    assert conf.keys() == {'a', 'b', 'c', 'd'}

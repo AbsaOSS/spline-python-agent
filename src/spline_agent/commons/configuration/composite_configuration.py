@@ -37,9 +37,3 @@ class CompositeConfiguration(BaseConfiguration):
 
     def __contains__(self, key: str) -> bool:
         return any(key in config for config in self.__configs)
-
-    def keys(self) -> set[str]:
-        all_keys = set()
-        for config in self.__configs:
-            all_keys.update(config.keys())
-        return set(all_keys)

@@ -30,5 +30,5 @@ class DictConfiguration(BaseConfiguration):
     def get(self, key: str, typ: Optional[Type[T]] = None) -> Optional[T]:
         return self.__settings.get(key)
 
-    def keys(self) -> set[str]:
-        return set(self.__settings.keys())
+    def __contains__(self, key: str) -> bool:
+        return key in self.__settings

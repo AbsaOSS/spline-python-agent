@@ -55,7 +55,3 @@ class ConfigurationMock(Configuration):
     @property
     @abstractmethod
     def __contains__(self) -> Mock: pass
-
-    @property
-    @abstractmethod
-    def keys(self) -> Mock: pass

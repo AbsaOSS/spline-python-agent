@@ -29,6 +29,3 @@ class BaseConfiguration(Configuration, ABC):
         if value is None:
             raise ConfigurationError(f'Configuration property not found: {key}')
         return value
-
-    def __contains__(self, key: str) -> bool:
-        return key in self.keys()

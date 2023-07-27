@@ -36,9 +36,6 @@ class DynaconfConfiguration(BaseConfiguration):
     def __contains__(self, key: str) -> bool:
         return self.__locate_item(key) is not None
 
-    def keys(self) -> set[str]:
-        return {k.lower() for k in self.__settings}
-
     def __locate_item(self, key: str) -> Optional[T]:
         keys = key.split('.')
         root = self.__settings
