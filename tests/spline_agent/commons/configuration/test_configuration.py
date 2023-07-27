@@ -29,12 +29,11 @@ from typing import Any
 from unittest.mock import create_autospec
 
 import pytest
-from dynaconf import Dynaconf
 
 from spline_agent.commons.configuration.composite_configuration import CompositeConfiguration
 from spline_agent.commons.configuration.configuration import Configuration
 from spline_agent.commons.configuration.dict_configuration import DictConfiguration
-from spline_agent.commons.configuration.dynaconf_configuration import DynaconfConfiguration
+from spline_agent.commons.configuration.file_configuration import FileConfiguration
 from spline_agent.exceptions import ConfigurationError
 from ...mocks import ConfigurationMock
 
@@ -76,7 +75,7 @@ def test_dict_configuration():
 
 def test_dynaconf_configuration__flat_structure():
     # prepare
-    conf = DynaconfConfiguration(Dynaconf(settings_files=[f'{_PATH}/test_configuration_settings.flat.yaml']))
+    conf = FileConfiguration(f'{_PATH}/test_configuration_settings.flat.yaml')
 
     # execute and verify
     _assert_item(conf, 'x.y', 1)
@@ -92,9 +91,9 @@ def test_dynaconf_configuration__flat_structure():
     _assert_no_item(conf, 'nah')
 
 
-def test_dynaconf_configuration__nested_structure():
+def test_file_configuration__nested_structure():
     # prepare
-    conf = DynaconfConfiguration(Dynaconf(settings_files=[f'{_PATH}/test_configuration_settings.nested.yaml']))
+    conf = FileConfiguration(f'{_PATH}/test_configuration_settings.nested.yaml')
 
     # execute and verify
     _assert_item(conf, 'a.b', 1)
@@ -110,9 +109,9 @@ def test_dynaconf_configuration__nested_structure():
     _assert_no_item(conf, 'nah')
 
 
-def test_dynaconf_configuration__mixed_structure():
+def test_file_configuration__mixed_structure():
     # prepare
-    conf = DynaconfConfiguration(Dynaconf(settings_files=[f'{_PATH}/test_configuration_settings.mixed_struct.yaml']))
+    conf = FileConfiguration(f'{_PATH}/test_configuration_settings.mixed_struct.yaml')
 
     # execute and verify
     _assert_item(conf, 'a.b.c', 1)
@@ -128,9 +127,9 @@ def test_dynaconf_configuration__mixed_structure():
     _assert_no_item(conf, 'nah')
 
 
-def test_dynaconf_configuration__mixed_cases():
+def test_file_configuration__mixed_cases():
     # prepare
-    conf = DynaconfConfiguration(Dynaconf(settings_files=[f'{_PATH}/test_configuration_settings.mixed_cases.yaml']))
+    conf = FileConfiguration(f'{_PATH}/test_configuration_settings.mixed_cases.yaml')
 
     # execute and verify
     _assert_item(conf, 'a.b.c', 1)

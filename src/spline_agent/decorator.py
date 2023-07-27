@@ -19,9 +19,9 @@ from functools import wraps
 from typing import Optional, Union, Mapping, Any, cast, Callable
 from urllib.parse import urlparse
 
-from dynaconf import Dynaconf
-
-from spline_agent.commons.configuration import Configuration, DynaconfConfiguration, CompositeConfiguration
+from spline_agent.commons.configuration import Configuration, CompositeConfiguration
+from spline_agent.commons.configuration.env_configuration import EnvConfiguration
+from spline_agent.commons.configuration.file_configuration import FileConfiguration
 from spline_agent.commons.proxy import ObservingProxy
 from spline_agent.constants import CONFIG_FILE_DEFAULT, CONFIG_FILE_USER
 from spline_agent.context import with_context_do, LineageTrackingContext, WriteMode
@@ -59,9 +59,10 @@ def track_lineage(
     # configure
     logger.debug(f'CONFIG_FILE_DEFAULT : {CONFIG_FILE_DEFAULT}')
     logger.debug(f'CONFIG_FILE_USER    : {CONFIG_FILE_USER}')
-    default_config = DynaconfConfiguration(Dynaconf(settings_files=[CONFIG_FILE_DEFAULT]))
-    user_config = config if config is not None else DynaconfConfiguration(Dynaconf(settings_files=[CONFIG_FILE_USER]))
-    config = CompositeConfiguration(user_config, default_config)
+    default_config = FileConfiguration(CONFIG_FILE_DEFAULT)
+    user_config = config if config is not None else FileConfiguration(CONFIG_FILE_USER)
+    env_config = EnvConfiguration(prefix='spline')
+    config = CompositeConfiguration(env_config, user_config, default_config)
 
     # determine mode
     mode = mode if mode is not None else SplineMode[config['spline.mode']]
