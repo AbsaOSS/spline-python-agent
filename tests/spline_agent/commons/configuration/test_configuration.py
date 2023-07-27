@@ -38,6 +38,8 @@ from spline_agent.commons.configuration.dynaconf_configuration import DynaconfCo
 from spline_agent.exceptions import ConfigurationError
 from ...mocks import ConfigurationMock
 
+_PATH: str = os.path.dirname(__file__)
+
 
 def _assert_item(conf: Configuration, key: str, expected: Any):
     assert key in conf
@@ -73,21 +75,86 @@ def test_dict_configuration():
     assert conf.keys() == {'a', 'b', 'c', 'd'}
 
 
-def test_dynaconf_configuration():
+def test_dynaconf_configuration__flat_structure():
     # prepare
-    test_settings = Dynaconf(settings_files=[f'{os.path.dirname(__file__)}/test_configuration_dynaconf.settings.toml'])
+    conf = DynaconfConfiguration(Dynaconf(settings_files=[f'{_PATH}/test_configuration_settings.flat.yaml']))
 
-    # execute
-    conf = DynaconfConfiguration(test_settings)
+    # execute and verify
+    _assert_item(conf, 'x.y', 1)
+    _assert_item(conf, 'a.b', True)
+    _assert_item(conf, 'm.n.o', 'Hello')
+    _assert_item(conf, 'p.q.r', [10, 20])
 
-    # verify
-    _assert_item(conf, 'a', 1)
-    _assert_item(conf, 'b', True)
-    _assert_item(conf, 'c', 'Hello')
-    _assert_item(conf, 'd', [10, 20])
-    _assert_item(conf, 'e', {'foo': 'bar'})
+    _assert_item(conf, 'X.Y', 1)
+    _assert_item(conf, 'A.B', True)
+    _assert_item(conf, 'M.N.O', 'Hello')
+    _assert_item(conf, 'P.Q.R', [10, 20])
+
     _assert_no_item(conf, 'nah')
-    assert {'a', 'b', 'c', 'd', 'e'}.issubset(conf.keys())
+
+    assert {'x', 'a', 'm', 'p'}.issubset(conf.keys())
+
+
+def test_dynaconf_configuration__nested_structure():
+    # prepare
+    conf = DynaconfConfiguration(Dynaconf(settings_files=[f'{_PATH}/test_configuration_settings.nested.yaml']))
+
+    # execute and verify
+    _assert_item(conf, 'a.b', 1)
+    _assert_item(conf, 'c.d', True)
+    _assert_item(conf, 'e.f.g', 'Hello')
+    _assert_item(conf, 'h.i.j', [10, 20])
+
+    _assert_item(conf, 'A.B', 1)
+    _assert_item(conf, 'C.D', True)
+    _assert_item(conf, 'E.F.G', 'Hello')
+    _assert_item(conf, 'H.I.J', [10, 20])
+
+    _assert_no_item(conf, 'nah')
+
+    assert {'a', 'c', 'e', 'h'}.issubset(conf.keys())
+
+
+def test_dynaconf_configuration__mixed_structure():
+    # prepare
+    conf = DynaconfConfiguration(Dynaconf(settings_files=[f'{_PATH}/test_configuration_settings.mixed_struct.yaml']))
+
+    # execute and verify
+    _assert_item(conf, 'a.b.c', 1)
+    _assert_item(conf, 'd.e.f', True)
+    _assert_item(conf, 'g', {'h.i': 'Hello'})
+    _assert_item(conf, 'j.k', {'l.m': [10, 20]})
+
+    _assert_item(conf, 'A.B.C', 1)
+    _assert_item(conf, 'D.E.F', True)
+    _assert_item(conf, 'G', {'h.i': 'Hello'})
+    _assert_item(conf, 'J.K', {'l.m': [10, 20]})
+
+    _assert_no_item(conf, 'nah')
+
+    assert {'a', 'd', 'g', 'j'}.issubset(conf.keys())
+
+
+def test_dynaconf_configuration__mixed_cases():
+    # prepare
+    conf = DynaconfConfiguration(Dynaconf(settings_files=[f'{_PATH}/test_configuration_settings.mixed_cases.yaml']))
+
+    # execute and verify
+    _assert_item(conf, 'a.b.c', 1)
+    _assert_item(conf, 'd.e.f', True)
+    _assert_item(conf, 'g', {'h.i': 'Hello'})
+    _assert_item(conf, 'j.k', {'l.M': [10, 20]})
+    _assert_item(conf, 'j', {'K': {'l.M': [10, 20]}})
+
+    _assert_item(conf, 'A.B.C', 1)
+    _assert_item(conf, 'D.E.F', True)
+    _assert_item(conf, 'G', {'h.i': 'Hello'})
+    _assert_item(conf, 'J.K', {'l.M': [10, 20]})
+    _assert_item(conf, 'J', {'K': {'l.M': [10, 20]}})
+
+    _assert_no_item(conf, 'nah')
+
+    assert {'a', 'd', 'g', 'j'}.issubset(conf.keys())
 
 
 def test_composite_configuration():

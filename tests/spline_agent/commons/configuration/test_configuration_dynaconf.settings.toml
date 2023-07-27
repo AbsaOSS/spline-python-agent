@@ -1,5 +1,0 @@
-a = 1
-b = true
-c = "Hello"
-d = [10, 20]
-e = { foo = "bar" }

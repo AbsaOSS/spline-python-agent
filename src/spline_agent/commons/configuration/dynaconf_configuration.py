@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from functools import reduce
 from typing import Type, Optional
 
 from dynaconf import Dynaconf
@@ -22,14 +23,27 @@ from .configuration import T
 
 class DynaconfConfiguration(BaseConfiguration):
     """
-    A Configuration adapter for Dynaconf
+    A Configuration adapter for Dynaconf.
+    Supports retrieving keys using dot-notation (a.b.c)
     """
 
     def __init__(self, settings: Dynaconf) -> None:
         self.__settings = settings
 
     def get(self, key: str, typ: Optional[Type[T]] = None) -> Optional[T]:
-        return self.__settings.get(key)
+        return self.__locate_item(key)
+
+    def __contains__(self, key: str) -> bool:
+        return self.__locate_item(key) is not None
 
     def keys(self) -> set[str]:
         return {k.lower() for k in self.__settings}
+
+    def __locate_item(self, key: str) -> Optional[T]:
+        keys = key.split('.')
+        root = self.__settings
+        return reduce(
+            lambda i, k: i.get(k) if i is not None and hasattr(i, 'get') and callable(i.get) else None,
+            keys,
+            root
+        )

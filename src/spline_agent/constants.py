@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import importlib.metadata
+import os
 from uuid import UUID
 
 import spline_agent
@@ -24,3 +25,6 @@ AGENT_INFO = NameAndVersion(
 )
 
 EXECUTION_PLAN_NAMESPACE: UUID = UUID('475196d0-16ca-4cba-aec7-c9f2ddd9326c')
+
+CONFIG_FILE_DEFAULT = f'{os.path.dirname(__file__)}/spline.default.yaml'
+CONFIG_FILE_USER = f'{os.getcwd()}/spline.yaml'

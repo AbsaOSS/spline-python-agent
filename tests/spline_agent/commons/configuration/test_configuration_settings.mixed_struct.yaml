@@ -1,0 +1,10 @@
+a.b:
+  c: 1
+d.e.f: true
+g:
+  # this is only accessible as ['g']['h.i'], not as ['g.h.i']
+  h.i: 'Hello'
+j:
+  k:
+    # this is only accessible as ['j']['k']['l.m'], not as ['j.k.l.m']
+    l.m: [10, 20]

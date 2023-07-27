@@ -14,7 +14,6 @@
 
 import inspect
 import logging
-import os
 import time
 from functools import wraps
 from typing import Optional, Union, Mapping, Any, cast, Callable
@@ -22,8 +21,9 @@ from urllib.parse import urlparse
 
 from dynaconf import Dynaconf
 
-from spline_agent.commons.configuration import Configuration, DynaconfConfiguration
+from spline_agent.commons.configuration import Configuration, DynaconfConfiguration, CompositeConfiguration
 from spline_agent.commons.proxy import ObservingProxy
+from spline_agent.constants import CONFIG_FILE_DEFAULT, CONFIG_FILE_USER
 from spline_agent.context import with_context_do, LineageTrackingContext, WriteMode
 from spline_agent.datasources import DataSource
 from spline_agent.dispatcher import LineageDispatcher
@@ -46,10 +46,7 @@ def track_lineage(
         write_mode: Optional[WriteMode] = None,
         system_info: Optional[NameAndVersion] = None,
         dispatcher: Optional[LineageDispatcher] = None,
-        config: Configuration = DynaconfConfiguration(Dynaconf(settings_files=[
-            f'{os.path.dirname(__file__)}/spline.default.yaml',
-            f'{os.getcwd()}/spline.yaml',
-        ])),
+        config: Optional[Configuration] = None,
 ):
     # check if the decorator is used correctly
     first_arg = locals()[next(iter(inspect.signature(track_lineage).parameters.keys()))]
@@ -58,6 +55,13 @@ def track_lineage(
         # so the decorated function unintentionally becomes the value for the 1st positional parameter.
         raise TypeError(
             f'@{track_lineage.__name__}() decorator should be used with parentheses, even if no arguments are provided')
+
+    # configure
+    logger.debug(f'CONFIG_FILE_DEFAULT : {CONFIG_FILE_DEFAULT}')
+    logger.debug(f'CONFIG_FILE_USER    : {CONFIG_FILE_USER}')
+    default_config = DynaconfConfiguration(Dynaconf(settings_files=[CONFIG_FILE_DEFAULT]))
+    user_config = config if config is not None else DynaconfConfiguration(Dynaconf(settings_files=[CONFIG_FILE_USER]))
+    config = CompositeConfiguration(user_config, default_config)
 
     # determine mode
     mode = mode if mode is not None else SplineMode[config['spline.mode']]
@@ -79,7 +83,8 @@ def track_lineage(
         return lambda _: _
 
     else:
-        raise ValueError(f"Unknown Spline mode '{mode.name.rpartition('.')[-1]}'")
+        mode_name = mode.name.rpartition('.')[-1]
+        raise ValueError(f"Unknown Spline mode '{mode_name}'")
 
 
 def _active_decorator(
