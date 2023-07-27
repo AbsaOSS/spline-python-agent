@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from __future__ import annotations
+
 from typing import Type, Optional
 
 from dynaconf import Dynaconf
@@ -27,13 +29,14 @@ class EnvConfiguration(BaseConfiguration):
     It loads environment variables with the specified prefix.
     """
 
-    def __init__(self, prefix: str) -> None:
+    def __init__(self, prefix: str = '') -> None:
         """
         :param prefix: environment variable name prefix
         """
-        self.__dynaconf = DynaconfConfiguration(Dynaconf(envvar_prefix=prefix))
-        self.__prefix = f'{prefix}.'
-        self.__prefix_len = len(prefix) + 1
+        dynaconf_env_prefix: str | bool = prefix.replace('.', '_') if prefix else False
+        self.__dynaconf = DynaconfConfiguration(Dynaconf(envvar_prefix=dynaconf_env_prefix))
+        self.__prefix = f'{prefix}.' if prefix else ''
+        self.__prefix_len = len(self.__prefix)
 
     def get(self, key: str, typ: Optional[Type[T]] = None) -> Optional[T]:
         return self.__dynaconf.get(self.__encode_key(key)) if key.startswith(self.__prefix) else None

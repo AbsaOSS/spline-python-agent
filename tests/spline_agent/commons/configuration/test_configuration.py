@@ -33,6 +33,7 @@ import pytest
 from spline_agent.commons.configuration.composite_configuration import CompositeConfiguration
 from spline_agent.commons.configuration.configuration import Configuration
 from spline_agent.commons.configuration.dict_configuration import DictConfiguration
+from spline_agent.commons.configuration.env_configuration import EnvConfiguration
 from spline_agent.commons.configuration.file_configuration import FileConfiguration
 from spline_agent.exceptions import ConfigurationError
 from ...mocks import ConfigurationMock
@@ -179,3 +180,30 @@ def test_composite_configuration():
     _assert_item(conf, 'c', 1)
     _assert_item(conf, 'd', [2, 22])
     _assert_no_item(conf, 'nah')
+
+
+def test_env_configuration(set_env_vars):
+    # prepare
+    set_env_vars({
+        'TEST_FOO_ENV': 42,
+        'TEST_BAR_ENV': 'forty-two',
+        'SOME_OTHER_ENV': 'true',
+    })
+
+    # execute
+    conf_all = EnvConfiguration()
+    conf_test = EnvConfiguration(prefix='test')
+    conf_test_foo = EnvConfiguration(prefix='test.foo')
+
+    # verify
+    _assert_item(conf_all, 'test.foo.env', 42)
+    _assert_item(conf_all, 'test.bar.env', 'forty-two')
+    _assert_item(conf_all, 'some.other.env', True)
+
+    _assert_item(conf_test, 'test.foo.env', 42)
+    _assert_item(conf_test, 'test.bar.env', 'forty-two')
+    _assert_no_item(conf_test, 'some.other.env')
+
+    _assert_item(conf_test_foo, 'test.foo.env', 42)
+    _assert_no_item(conf_test_foo, 'test.bar.env')
+    _assert_no_item(conf_test_foo, 'some.other.env')
