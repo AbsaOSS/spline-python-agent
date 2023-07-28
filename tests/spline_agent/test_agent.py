@@ -24,23 +24,73 @@ from spline_agent.decorator import track_lineage
 from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.enums import SplineMode
 from spline_agent.exceptions import LineageTrackingContextNotInitialized, LineageTrackingContextIncompleteError
-from spline_agent.lineage_model import NameAndVersion
+from spline_agent.lineage_model import NameAndVersion, ExecutionEvent
 
 
 def test_decorator_calls_func_and_returns_value():
     # prepare
-    dummy_dispatcher = create_autospec(LineageDispatcher)
-    dummy_output = DataSource('dummy')
-    dummy_si = NameAndVersion(name="dummy", version="dummy")
+    mock_disp = create_autospec(LineageDispatcher)
+    dummy_ds = DataSource('dummy')
+    dummy_nv = NameAndVersion(name="dummy", version="dummy")
 
-    @track_lineage(dispatcher=dummy_dispatcher, output=dummy_output, write_mode=WriteMode.APPEND, system_info=dummy_si)
-    def test_plus_func(x: int, y: int): return x + y
+    @track_lineage(dispatcher=mock_disp, output=dummy_ds, write_mode=WriteMode.APPEND, system_info=dummy_nv)
+    def test_divide__mode_enabled(x: int, y: int): return x / y
 
-    # execute
-    five = test_plus_func(2, 3)
+    @track_lineage(mode=SplineMode.BYPASS)
+    def test_divide__mode_by_pass(x: int, y: int): return x / y
 
-    # verify
-    assert five == 5
+    @track_lineage(mode=SplineMode.BYPASS)
+    def test_divide__mode_disabled(x: int, y: int): return x / y
+
+    # execute and verify
+    assert test_divide__mode_disabled(8, 4) == 2
+    assert test_divide__mode_by_pass(8, 4) == 2
+
+    mock_disp.send_plan.assert_not_called()
+    mock_disp.send_event.assert_not_called()
+
+    assert test_divide__mode_enabled(8, 4) == 2
+
+    mock_disp.send_plan.assert_called_once()
+    mock_disp.send_event.assert_called_once()
+
+    captured_event: ExecutionEvent = mock_disp.send_event.call_args.args[0]
+    assert captured_event.error is None
+
+
+def test_decorator_calls_func_and_propagates_errors():
+    # prepare
+    mock_disp: LineageDispatcherMock = create_autospec(LineageDispatcher)
+    dummy_ds = DataSource('dummy')
+    dummy_nv = NameAndVersion(name="dummy", version="dummy")
+
+    @track_lineage(dispatcher=mock_disp, output=dummy_ds, write_mode=WriteMode.APPEND, system_info=dummy_nv)
+    def test_divide__mode_enabled(x: int, y: int): return x / y
+
+    @track_lineage(mode=SplineMode.BYPASS)
+    def test_divide__mode_by_pass(x: int, y: int): return x / y
+
+    @track_lineage(mode=SplineMode.BYPASS)
+    def test_divide__mode_disabled(x: int, y: int): return x / y
+
+    # execute and verify
+    with pytest.raises(ZeroDivisionError):
+        test_divide__mode_disabled(2, 0)
+    with pytest.raises(ZeroDivisionError):
+        test_divide__mode_by_pass(2, 0)
+
+    mock_disp.send_plan.assert_not_called()
+    mock_disp.send_event.assert_not_called()
+
+    with pytest.raises(ZeroDivisionError):
+        test_divide__mode_enabled(2, 0)
+
+    mock_disp.send_plan.assert_called_once()
+    mock_disp.send_event.assert_called_once()
+
+    captured_event: ExecutionEvent = mock_disp.send_event.call_args.args[0]
+    assert captured_event.error is not None
+    assert captured_event.error == 'division by zero'
 
 
 def test_context_mgmt():
@@ -72,7 +122,7 @@ def test_context_mgmt():
         get_tracking_context()
 
 
-def test_decorator_mode_bypass():
+def test_decorator_mode_bypass__context_remains_working():
     # prepare
     ctx: Optional[LineageTrackingContext] = None
 
