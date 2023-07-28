@@ -22,15 +22,18 @@ from spline_agent.context import WriteMode, get_tracking_context, LineageTrackin
 from spline_agent.datasources import DataSource
 from spline_agent.decorator import track_lineage
 from spline_agent.dispatcher import LineageDispatcher
-from spline_agent.exceptions import LineageContextNotInitialized
+from spline_agent.enums import SplineMode
+from spline_agent.exceptions import LineageTrackingContextNotInitialized, LineageTrackingContextIncompleteError
 from spline_agent.lineage_model import NameAndVersion
 
 
 def test_decorator_calls_func_and_returns_value():
     # prepare
     dummy_dispatcher = create_autospec(LineageDispatcher)
+    dummy_output = DataSource('dummy')
+    dummy_si = NameAndVersion(name="dummy", version="dummy")
 
-    @track_lineage(dispatcher=dummy_dispatcher)
+    @track_lineage(dispatcher=dummy_dispatcher, output=dummy_output, write_mode=WriteMode.APPEND, system_info=dummy_si)
     def test_plus_func(x: int, y: int): return x + y
 
     # execute
@@ -43,16 +46,19 @@ def test_decorator_calls_func_and_returns_value():
 def test_context_mgmt():
     # prepare
     dummy_dispatcher = create_autospec(LineageDispatcher)
+    dummy_output = DataSource('dummy')
+    dummy_si = NameAndVersion(name="dummy", version="dummy")
+
     captured_ctx: Optional[LineageTrackingContext] = None
 
-    @track_lineage(dispatcher=dummy_dispatcher)
+    @track_lineage(dispatcher=dummy_dispatcher, output=dummy_output, write_mode=WriteMode.APPEND, system_info=dummy_si)
     def test_func():
         nonlocal captured_ctx
         captured_ctx = get_tracking_context()
 
     # verify pre-conditions:
     # - the context does not exist yet outside decorated function
-    with pytest.raises(LineageContextNotInitialized):
+    with pytest.raises(LineageTrackingContextNotInitialized):
         get_tracking_context()
 
     # execute
@@ -62,22 +68,74 @@ def test_context_mgmt():
     # - the context used to exist inside decorated function
     assert captured_ctx is not None
     # - the context does not exist anymore outside decorated function
-    with pytest.raises(LineageContextNotInitialized):
+    with pytest.raises(LineageTrackingContextNotInitialized):
         get_tracking_context()
+
+
+def test_decorator_mode_bypass():
+    # prepare
+    ctx: Optional[LineageTrackingContext] = None
+
+    @track_lineage(mode=SplineMode.BYPASS)
+    def test_bypass_plus_func(a: int, b: int) -> int:
+        # verify the context is accessible and no error is thrown
+        nonlocal ctx
+        ctx = get_tracking_context()
+        return a + b
+
+    # execute
+    five = test_bypass_plus_func(2, 3)
+
+    # verify
+    assert ctx is not None
+    ctx.name = 'foo'
+    ctx.add_input(DataSource('bar'))
+
+    assert five == 5
+    assert ctx.name == "foo"
+    assert ctx.inputs == (DataSource('bar'),)
+
+
+def test_decorator_mode_disabled__no_context_access():
+    # prepare
+    @track_lineage(mode=SplineMode.DISABLED)
+    def test_untracked_plus_func(a: int, b: int) -> int:
+        return a + b
+
+    # execute
+    five = test_untracked_plus_func(2, 3)
+
+    # verify
+    assert five == 5
+
+
+def test_decorator_mode_disabled__with_context_access():
+    # prepare
+    @track_lineage(mode=SplineMode.DISABLED)
+    def test_untracked_func():
+        get_tracking_context()
+
+    # execute and verify
+    with pytest.raises(LineageTrackingContextNotInitialized):
+        test_untracked_func()
 
 
 def test_decorator_with_default_args__no_capture_lineage():
     # prepare
     mock_dispatcher: LineageDispatcherMock = create_autospec(LineageDispatcher)
+    dummy_output = DataSource('dummy')
+    dummy_si = NameAndVersion(name="dummy", version="dummy")
+
     ctx: Optional[LineageTrackingContext] = None
 
-    @track_lineage(dispatcher=mock_dispatcher)
+    @track_lineage()
     def test_func():
         nonlocal ctx
         ctx = get_tracking_context()
 
     # execute
-    test_func()
+    with pytest.raises(LineageTrackingContextIncompleteError):
+        test_func()
 
     # verify
     assert ctx is not None
@@ -126,10 +184,17 @@ def test_decorator_with_provided_args__capture_lineage():
 def test_decorator_with_name_as_expression():
     # prepare
     dummy_dispatcher = create_autospec(LineageDispatcher)
+    dummy_output = DataSource('dummy')
+    dummy_si = NameAndVersion(name="dummy", version="dummy")
+
     ctx: Optional[LineageTrackingContext] = None
 
     # noinspection PyUnusedLocal
-    @track_lineage(name='{arg1}', dispatcher=dummy_dispatcher)
+    @track_lineage(name='{arg1}',
+                   dispatcher=dummy_dispatcher,
+                   output=dummy_output,
+                   write_mode=WriteMode.APPEND,
+                   system_info=dummy_si)
     def my_test_func(arg1: str):
         nonlocal ctx
         ctx = get_tracking_context()

@@ -12,21 +12,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import logging
 from contextvars import ContextVar
-from enum import Enum
-from enum import auto
 from typing import Optional, Callable
 
 from ordered_set import OrderedSet
 
 from spline_agent.datasources import DataSource
-from spline_agent.exceptions import LineageContextNotInitialized
+from spline_agent.enums import WriteMode
+from spline_agent.exceptions import LineageTrackingContextNotInitialized
 from spline_agent.lineage_model import NameAndVersion
 
-
-class WriteMode(Enum):
-    APPEND = auto()
-    OVERWRITE = auto()
+logger = logging.getLogger(__name__)
 
 
 class LineageTrackingContext:
@@ -43,7 +40,10 @@ class LineageTrackingContext:
 
     @name.setter
     def name(self, value: str):
-        # todo: warning if _name is reassigned
+        assert value is not None
+        if self._name is not None:
+            logger.warning(f"Tracking context property 'name' is reassigned: "
+                           f"old value '{self._name}', new value '{value}'")
         self._name = value
 
     @property
@@ -51,7 +51,7 @@ class LineageTrackingContext:
         return tuple(self._ins)
 
     def add_input(self, ds: DataSource):
-        # todo: warning if ds is already registered
+        # todo: Use sequence, not set (issue #14)
         self._ins.add(ds)
 
     @property
@@ -60,7 +60,10 @@ class LineageTrackingContext:
 
     @output.setter
     def output(self, ds: DataSource):
-        # todo: warning if _out is reassigned
+        assert ds is not None
+        if self._out is not None:
+            logger.warning(f"Tracking context property 'output' is reassigned: "
+                           f"old value '{self._out}', new value '{ds}'")
         self._out = ds
 
     @property
@@ -90,8 +93,10 @@ def get_tracking_context() -> LineageTrackingContext:
     if ctx is None:
         this_fn_name = get_tracking_context.__name__
         decorator_name = track_lineage.__name__
-        raise LineageContextNotInitialized(
-            f"The function `{this_fn_name}()` was called outside of `@{decorator_name}()` decorator")
+        raise LineageTrackingContextNotInitialized(
+            f"The function '{this_fn_name}()' must be called from inside a function, that itself or any of its callers "
+            f"is decorated with the '@{decorator_name}()' decorator. "
+            f"Also the Spline mode must not be DISABLED. (If you want to disable Spline temporarily use mode BYPASS)")
     return ctx
 
 

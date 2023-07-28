@@ -16,13 +16,15 @@ import inspect
 import logging
 import time
 from functools import wraps
-from typing import Optional, Union, Mapping, Any
+from typing import Optional, Union, Mapping, Any, cast, Callable
 from urllib.parse import urlparse
 
+from spline_agent.commons.proxy import ObservingProxy
 from spline_agent.context import with_context_do, LineageTrackingContext, WriteMode
 from spline_agent.datasources import DataSource
 from spline_agent.dispatcher import LineageDispatcher
-from spline_agent.exceptions import LineageContextIncompleteError
+from spline_agent.enums import SplineMode
+from spline_agent.exceptions import LineageTrackingContextIncompleteError
 from spline_agent.harvester import harvest_lineage
 from spline_agent.lineage_model import NameAndVersion, DurationNs
 
@@ -32,12 +34,13 @@ DsParamExpr = Union[str, DataSource]
 
 
 def track_lineage(
-        dispatcher: LineageDispatcher,
+        mode: SplineMode = SplineMode.ENABLED,
         name: Optional[str] = None,
         inputs: tuple[DsParamExpr, ...] = (),
         output: Optional[DsParamExpr] = None,
         write_mode: Optional[WriteMode] = None,
         system_info: Optional[NameAndVersion] = None,
+        dispatcher: Optional[LineageDispatcher] = None,
 ):
     # check if the decorator is used correctly
     if callable(name):
@@ -47,70 +50,107 @@ def track_lineage(
         decor_name = inspect.currentframe().f_code.co_name
         raise TypeError(f'@{decor_name}() decorator should be used with parentheses, even if no arguments are provided')
 
-    def decorator(func):
-        # inspect the 'func' signature and collect the parameter names
-        sig: inspect.Signature = inspect.signature(func)
-        params: Mapping[str, inspect.Parameter] = sig.parameters
+    if mode is SplineMode.ENABLED:
+        logging.info('Lineage tracking is ENABLED')
+        return lambda func: _active_decorator(func, name, inputs, output, write_mode, system_info, dispatcher)
+    elif mode is SplineMode.BYPASS:
+        logging.info('Lineage tracking is in BYPASS mode -- not captured')
+        return _bypass_decorator
+    elif mode is SplineMode.DISABLED:
+        logging.info('Lineage tracking is DISABLED')
+        return lambda _: _
+    else:
+        raise ValueError(f"Unknown Spline mode '{mode.name.rpartition('.')[-1]}'")
 
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # create a combined dictionary of all arguments passed to target function
-            bindings = {**{key: arg for key, arg in zip(params, args)}, **kwargs}
 
-            # create and pre-populate a new harvesting context
-            ctx = LineageTrackingContext()
+def _active_decorator(
+        func: Callable,
+        name: Optional[str] = None,
+        inputs: tuple[DsParamExpr, ...] = (),
+        output: Optional[DsParamExpr] = None,
+        write_mode: Optional[WriteMode] = None,
+        system_info: Optional[NameAndVersion] = None,
+        dispatcher: Optional[LineageDispatcher] = None,
+):
+    # inspect the 'func' signature and collect the parameter names
+    sig: inspect.Signature = inspect.signature(func)
+    params: Mapping[str, inspect.Parameter] = sig.parameters
 
-            # ... app name
-            ctx.name = _eval_str_expr(name, bindings) if name else func.__name__
+    @wraps(func)
+    def active_wrapper(*args, **kwargs):
+        # create and pre-populate a new harvesting context
+        ctx = LineageTrackingContext()
 
-            # ... inputs
-            for inp in inputs:
-                ds = _eval_ds_expr(inp, bindings)
-                ctx.add_input(ds)
+        # create a combined dictionary of all arguments passed to target function
+        bindings = {**{key: arg for key, arg in zip(params, args)}, **kwargs}
 
-            # ... output
-            if output is not None:
-                ds = _eval_ds_expr(output, bindings)
-                ctx.output = ds
+        # ... app name
+        ctx.name = _eval_str_expr(name, bindings) if name else func.__name__
 
-            # ... other params
-            ctx.write_mode = write_mode
-            ctx.system_info = system_info
+        # ... inputs
+        for inp in inputs:
+            ds = _eval_ds_expr(inp, bindings)
+            ctx.add_input(ds)
 
-            duration_ns: Optional[DurationNs] = None
-            error: Optional[Any] = None
+        # ... output
+        if output is not None:
+            ds = _eval_ds_expr(output, bindings)
+            ctx.output = ds
 
-            def execute_func():
-                nonlocal duration_ns
-                nonlocal error
-                start_time: DurationNs = time.time_ns()
-                try:
-                    return func(*args, **kwargs)
-                except Exception as ex:
-                    error = ex.__str__()
-                finally:
-                    end_time: DurationNs = time.time_ns()
-                    duration_ns = end_time - start_time
+        # ... other params
+        ctx.write_mode = write_mode
+        ctx.system_info = system_info
 
-            # call target function within the given harvesting context
-            func_res = with_context_do(ctx, execute_func)
+        # prepare execution stage
+        duration_ns: Optional[DurationNs] = None
+        error: Optional[Any] = None
 
+        def execute_func():
+            nonlocal duration_ns
+            nonlocal error
+            start_time: DurationNs = time.time_ns()
             try:
-                # obtain lineage model
-                lineage = harvest_lineage(ctx, func, duration_ns, error)
+                return func(*args, **kwargs)
+            except Exception as ex:
+                error = ex.__str__()
+            finally:
+                end_time: DurationNs = time.time_ns()
+                duration_ns = end_time - start_time
 
-                # dispatch captured lineage
-                dispatcher.send_plan(lineage.plan)
-                dispatcher.send_event(lineage.event)
+        # call target function within the given tracking context
+        func_res = with_context_do(ctx, execute_func)
 
-            except LineageContextIncompleteError as e:
-                logger.warning(f'Lineage skipped: {e.__str__()}')
+        # obtain lineage model
+        lineage = harvest_lineage(ctx, func, duration_ns, error)
 
-            return func_res
+        # todo: to be validated on the config level (issue #8)
+        if dispatcher is None:
+            raise LineageTrackingContextIncompleteError('dispatcher')
 
-        return wrapper
+        # dispatch captured lineage
+        dispatcher.send_plan(lineage.plan)
+        dispatcher.send_event(lineage.event)
 
-    return decorator
+        # return the original target function result
+        return func_res
+
+    return active_wrapper
+
+
+def _bypass_decorator(func):
+    @wraps(func)
+    def bypass_wrapper(*args, **kwargs):
+        # prepare an isolated context whose only role is to emulate Spline Agent API for the client code.
+        ctx_obj = LineageTrackingContext()
+        ctx_proxy = ObservingProxy(ctx_obj, lambda _, _member_name, _member_type, _args, _kwargs: logger.warning(
+            f"The {_member_type.name.rpartition('.')[-1].lower()} '{_member_name}' was called "
+            f"on a disabled lineage tracking context: args: {_args}, kwargs: {_kwargs}"))
+        isolated_ctx = cast(LineageTrackingContext, ctx_proxy)
+
+        # call a target function within an isolated context, and return the result
+        return with_context_do(isolated_ctx, lambda: func(*args, **kwargs))
+
+    return bypass_wrapper
 
 
 def _eval_ds_expr(expr: DsParamExpr, mapping=None) -> DataSource:
