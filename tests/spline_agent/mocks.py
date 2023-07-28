@@ -25,6 +25,7 @@
 #  limitations under the License.
 
 from abc import abstractmethod
+from logging import Logger
 from unittest.mock import NonCallableMock, Mock
 
 from spline_agent.commons.configuration import Configuration
@@ -55,3 +56,10 @@ class ConfigurationMock(Configuration):
     @property
     @abstractmethod
     def __contains__(self) -> Mock: pass
+
+
+# noinspection PyMethodOverriding
+class LoggerMock(Logger):
+    @property
+    @abstractmethod
+    def log(self) -> Mock: pass

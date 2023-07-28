@@ -29,11 +29,15 @@ class LoggingLineageDispatcher(LineageDispatcher):
 
     def __init__(
             self,
-            level: int | str,
-            logger: logging.Logger = logging.getLogger(__name__),
+            level: str | int,
+            logger: str | logging.Logger,
     ):
+        """
+        :param level: The logging level. Could be specified as an integer or a name ('INFO', 'DEBUG' etc.)
+        :param logger: The logger instance or name.
+        """
         self.__level = level if isinstance(level, int) else logging.getLevelName(level)
-        self.__logger = logger
+        self.__logger = logger if isinstance(logger, logging.Logger) else logging.getLogger(logger)
 
     def send_plan(self, plan: ExecutionPlan):
         plan_json: str = to_pretty_json_str(plan)
