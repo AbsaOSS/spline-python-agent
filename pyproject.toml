@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "spline_agent"
+name = "spline-agent"
 version = "0.1.0.dev1"
 description = "Spline agent for Python - lineage tracking tool"
 authors = [
