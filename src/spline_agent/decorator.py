@@ -28,7 +28,6 @@ from spline_agent.context import with_context_do, LineageTrackingContext, WriteM
 from spline_agent.datasources import DataSource
 from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.enums import SplineMode
-from spline_agent.exceptions import LineageTrackingContextIncompleteError
 from spline_agent.harvester import harvest_lineage
 from spline_agent.lineage_model import NameAndVersion, DurationNs
 from spline_agent.object_factory import ObjectFactory
@@ -90,12 +89,12 @@ def track_lineage(
 
 def _active_decorator(
         func: Callable,
-        name: Optional[str] = None,
-        inputs: tuple[DsParamExpr, ...] = (),
-        output: Optional[DsParamExpr] = None,
-        write_mode: Optional[WriteMode] = None,
-        system_info: Optional[NameAndVersion] = None,
-        dispatcher: Optional[LineageDispatcher] = None,
+        name: Optional[str],
+        inputs: tuple[DsParamExpr, ...],
+        output: Optional[DsParamExpr],
+        write_mode: Optional[WriteMode],
+        system_info: Optional[NameAndVersion],
+        dispatcher: LineageDispatcher,
 ):
     # inspect the 'func' signature and collect the parameter names
     sig: inspect.Signature = inspect.signature(func)
@@ -147,10 +146,6 @@ def _active_decorator(
 
         # obtain lineage model
         lineage = harvest_lineage(ctx, func, duration_ns, error)
-
-        # todo: to be validated on the config level (issue #8)
-        if dispatcher is None:
-            raise LineageTrackingContextIncompleteError('dispatcher')
 
         # dispatch captured lineage
         dispatcher.send_plan(lineage.plan)
