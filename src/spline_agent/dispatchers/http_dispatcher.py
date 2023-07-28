@@ -25,10 +25,6 @@ from spline_agent.lineage_model import ExecutionEvent, ExecutionPlan
 
 logger = logging.getLogger(__name__)
 
-SPLINE_PRODUCER_PLANS_PATH = 'execution-plans'
-SPLINE_PRODUCER_EVENTS_PATH = 'execution-events'
-SPLINE_PRODUCER_CONTENT_TYPE_VER_12 = 'application/vnd.absa.spline.producer.v1.2+json'
-
 
 class HttpLineageDispatcher(LineageDispatcher):
     """
@@ -38,14 +34,17 @@ class HttpLineageDispatcher(LineageDispatcher):
 
     def __init__(self,
                  base_url: str,
-                 plans_path: str = SPLINE_PRODUCER_PLANS_PATH,
-                 events_path: str = SPLINE_PRODUCER_EVENTS_PATH,
-                 content_type: str = SPLINE_PRODUCER_CONTENT_TYPE_VER_12,
+                 plans_url: str,
+                 events_url: str,
+                 content_type: str,
                  ):
         base_plan_with_slash = f'{base_url}/'
-        self.__plans_url = urljoin(base_plan_with_slash, plans_path)
-        self.__events_url = urljoin(base_plan_with_slash, events_path)
+        self.__plans_url = urljoin(base_plan_with_slash, plans_url)
+        self.__events_url = urljoin(base_plan_with_slash, events_url)
         self.__content_type = content_type
+
+        logger.info(f"Execution plans URL: {self.__plans_url}")
+        logger.info(f"Execution events URL: {self.__events_url}")
 
     def send_plan(self, plan: ExecutionPlan):
         """POST execution plan"""

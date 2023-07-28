@@ -40,7 +40,7 @@ def _set_env_vars(original_env_vars: EnvVars) -> Callable[[EnvVars], None]:
     def impl(test_env_vars: EnvVars):
         for key, value in test_env_vars.items():
             # save the original value, so we can restore it later
-            original_env_vars[key] = os.environ.get(key)
+            original_env_vars[key] = os.environ.get(key)  # type: ignore
             # set the new value for the test
             os.environ[key] = str(value)
 

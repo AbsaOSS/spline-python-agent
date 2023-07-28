@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from __future__ import annotations
+
 import logging
 
 from spline_agent.dispatcher import LineageDispatcher
@@ -27,10 +29,10 @@ class LoggingLineageDispatcher(LineageDispatcher):
 
     def __init__(
             self,
-            level: int = logging.INFO,
+            level: int | str,
             logger: logging.Logger = logging.getLogger(__name__),
     ):
-        self.__level = level
+        self.__level = level if isinstance(level, int) else logging.getLevelName(level)
         self.__logger = logger
 
     def send_plan(self, plan: ExecutionPlan):

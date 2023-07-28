@@ -19,11 +19,16 @@ spline:
   lineage_dispatcher:
 
     console:
-      class_name: spline_agent.dispatchers.console_dispatcher.ConsoleLineageDispatcher
+      class_name: 'spline_agent.dispatchers.console_dispatcher.ConsoleLineageDispatcher'
 
     logging:
-      class_name: spline_agent.dispatchers.logging_dispatcher.LoggingLineageDispatcher
+      class_name: 'spline_agent.dispatchers.logging_dispatcher.LoggingLineageDispatcher'
       level: INFO
 
     http:
-      class_name: spline_agent.dispatchers.http_dispatcher.HttpLineageDispatcher
+      class_name: 'spline_agent.dispatchers.http_dispatcher.HttpLineageDispatcher'
+      base_url:
+      plans_url: 'execution-plans'
+      events_url: 'execution-events'
+      content_type: 'application/vnd.absa.spline.producer.v1.2+json'
+
