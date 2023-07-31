@@ -126,33 +126,25 @@ def _active_decorator(
         ctx.system_info = system_info
 
         # prepare execution stage
-        duration_ns: Optional[DurationNs] = None
         error: Optional[Any] = None
-
-        def execute_func():
-            nonlocal duration_ns
-            nonlocal error
-            start_time: DurationNs = time.time_ns()
-            try:
-                return func(*args, **kwargs)
-            except Exception as ex:
-                error = ex.__str__()
-            finally:
-                end_time: DurationNs = time.time_ns()
-                duration_ns = end_time - start_time
+        start_time: DurationNs = time.time_ns()
 
         # call target function within the given tracking context
-        func_res = with_context_do(ctx, execute_func)
+        try:
+            return with_context_do(ctx, lambda: func(*args, **kwargs))
+        except Exception as ex:
+            error = ex
+            raise
+        finally:
+            end_time: DurationNs = time.time_ns()
+            duration_ns = end_time - start_time
 
-        # obtain lineage model
-        lineage = harvest_lineage(ctx, func, duration_ns, error)
+            # obtain lineage model
+            lineage = harvest_lineage(ctx, func, duration_ns, error.__str__() if error is not None else None)
 
-        # dispatch captured lineage
-        dispatcher.send_plan(lineage.plan)
-        dispatcher.send_event(lineage.event)
-
-        # return the original target function result
-        return func_res
+            # dispatch captured lineage
+            dispatcher.send_plan(lineage.plan)
+            dispatcher.send_event(lineage.event)
 
     return active_wrapper
 

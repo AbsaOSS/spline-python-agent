@@ -14,9 +14,7 @@
 
 import logging
 from contextvars import ContextVar
-from typing import Optional, Callable
-
-from ordered_set import OrderedSet
+from typing import Optional, Callable, List
 
 from spline_agent.datasources import DataSource
 from spline_agent.enums import WriteMode
@@ -29,7 +27,7 @@ logger = logging.getLogger(__name__)
 class LineageTrackingContext:
     def __init__(self):
         self.__name: Optional[str] = None
-        self.__ins: OrderedSet[DataSource] = OrderedSet()
+        self.__ins: List[DataSource] = []
         self.__out: Optional[DataSource] = None
         self.__write_mode: Optional[WriteMode] = None
         self.__system_info: Optional[NameAndVersion] = None
@@ -51,8 +49,7 @@ class LineageTrackingContext:
         return tuple(self.__ins)
 
     def add_input(self, ds: DataSource):
-        # todo: Use sequence, not set (issue #14)
-        self.__ins.add(ds)
+        self.__ins.append(ds)
 
     @property
     def output(self) -> Optional[DataSource]:
