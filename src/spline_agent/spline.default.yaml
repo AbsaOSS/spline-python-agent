@@ -12,23 +12,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import re
-import time
+spline:
 
-from spline_agent.lineage_model import Timestamp
+  mode: ENABLED
 
+  lineage_dispatcher:
 
-def current_time() -> Timestamp:
-    """
-    Current time since Epoch is millis
-    """
-    return int(round(time.time() * 1000))
+    console:
+      class_name: 'spline_agent.dispatchers.console_dispatcher.ConsoleLineageDispatcher'
 
+    logging:
+      class_name: 'spline_agent.dispatchers.logging_dispatcher.LoggingLineageDispatcher'
+      level: INFO
 
-def camel_to_snake(s: str) -> str:
-    """
-    Converts string in CamelNotation to snake_notation
-    """
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
-    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
-    return s2.lower()
+    http:
+      class_name: 'spline_agent.dispatchers.http_dispatcher.HttpLineageDispatcher'
+      base_url:
+      plans_url: 'execution-plans'
+      events_url: 'execution-events'
+      content_type: 'application/vnd.absa.spline.producer.v1.2+json'
+

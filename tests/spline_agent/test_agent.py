@@ -17,14 +17,22 @@ from unittest.mock import create_autospec
 
 import pytest
 
-from mocks import LineageDispatcherMock
 from spline_agent.context import WriteMode, get_tracking_context, LineageTrackingContext
 from spline_agent.datasources import DataSource
 from spline_agent.decorator import track_lineage
 from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.enums import SplineMode
-from spline_agent.exceptions import LineageTrackingContextNotInitialized, LineageTrackingContextIncompleteError
+from spline_agent.exceptions import LineageTrackingContextIncompleteError
+from spline_agent.exceptions import LineageTrackingContextNotInitializedError
 from spline_agent.lineage_model import NameAndVersion, ExecutionEvent
+from .mocks import LineageDispatcherMock
+
+
+def test_error_when_decorator_is_not_used_properly():
+    with pytest.raises(TypeError, match=fr'@{track_lineage.__name__}\(\) decorator should be used with parentheses'):
+        # missing ()
+        @track_lineage  # type: ignore
+        def my_func(): pass
 
 
 def test_decorator_calls_func_and_returns_value():
@@ -108,7 +116,7 @@ def test_context_mgmt():
 
     # verify pre-conditions:
     # - the context does not exist yet outside decorated function
-    with pytest.raises(LineageTrackingContextNotInitialized):
+    with pytest.raises(LineageTrackingContextNotInitializedError):
         get_tracking_context()
 
     # execute
@@ -118,7 +126,7 @@ def test_context_mgmt():
     # - the context used to exist inside decorated function
     assert captured_ctx is not None
     # - the context does not exist anymore outside decorated function
-    with pytest.raises(LineageTrackingContextNotInitialized):
+    with pytest.raises(LineageTrackingContextNotInitializedError):
         get_tracking_context()
 
 
@@ -166,19 +174,17 @@ def test_decorator_mode_disabled__with_context_access():
         get_tracking_context()
 
     # execute and verify
-    with pytest.raises(LineageTrackingContextNotInitialized):
+    with pytest.raises(LineageTrackingContextNotInitializedError):
         test_untracked_func()
 
 
 def test_decorator_with_default_args__no_capture_lineage():
     # prepare
     mock_dispatcher: LineageDispatcherMock = create_autospec(LineageDispatcher)
-    dummy_output = DataSource('dummy')
-    dummy_si = NameAndVersion(name="dummy", version="dummy")
 
     ctx: Optional[LineageTrackingContext] = None
 
-    @track_lineage()
+    @track_lineage(dispatcher=mock_dispatcher)
     def test_func():
         nonlocal ctx
         ctx = get_tracking_context()

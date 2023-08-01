@@ -19,14 +19,18 @@ from functools import wraps
 from typing import Optional, Union, Mapping, Any, cast, Callable
 from urllib.parse import urlparse
 
+from spline_agent.commons.configuration import Configuration, CompositeConfiguration
+from spline_agent.commons.configuration.env_configuration import EnvConfiguration
+from spline_agent.commons.configuration.file_configuration import FileConfiguration
 from spline_agent.commons.proxy import ObservingProxy
+from spline_agent.constants import CONFIG_FILE_DEFAULT, CONFIG_FILE_USER
 from spline_agent.context import with_context_do, LineageTrackingContext, WriteMode
 from spline_agent.datasources import DataSource
 from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.enums import SplineMode
-from spline_agent.exceptions import LineageTrackingContextIncompleteError
 from spline_agent.harvester import harvest_lineage
 from spline_agent.lineage_model import NameAndVersion, DurationNs
+from spline_agent.object_factory import ObjectFactory
 
 logger = logging.getLogger(__name__)
 
@@ -34,43 +38,63 @@ DsParamExpr = Union[str, DataSource]
 
 
 def track_lineage(
-        mode: SplineMode = SplineMode.ENABLED,
+        mode: Optional[SplineMode] = None,
         name: Optional[str] = None,
         inputs: tuple[DsParamExpr, ...] = (),
         output: Optional[DsParamExpr] = None,
         write_mode: Optional[WriteMode] = None,
         system_info: Optional[NameAndVersion] = None,
         dispatcher: Optional[LineageDispatcher] = None,
+        config: Optional[Configuration] = None,
 ):
     # check if the decorator is used correctly
-    if callable(name):
+    first_arg = locals()[next(iter(inspect.signature(track_lineage).parameters.keys()))]
+    if callable(first_arg):
         # it happens when the user forgets parenthesis when using a parametrized decorator,
-        # so the decorated function unintentionally becomes the value for the 1st positional parameter
-        # that in this case happens to be `name`.
-        decor_name = inspect.currentframe().f_code.co_name
-        raise TypeError(f'@{decor_name}() decorator should be used with parentheses, even if no arguments are provided')
+        # so the decorated function unintentionally becomes the value for the 1st positional parameter.
+        raise TypeError(
+            f'@{track_lineage.__name__}() decorator should be used with parentheses, even if no arguments are provided')
 
+    # configure
+    logger.debug(f'CONFIG_FILE_DEFAULT : {CONFIG_FILE_DEFAULT}')
+    logger.debug(f'CONFIG_FILE_USER    : {CONFIG_FILE_USER}')
+    default_config = FileConfiguration(CONFIG_FILE_DEFAULT)
+    user_config = config if config is not None else FileConfiguration(CONFIG_FILE_USER)
+    env_config = EnvConfiguration(prefix='spline')
+    config = CompositeConfiguration(env_config, user_config, default_config)
+
+    # determine mode
+    mode = mode if mode is not None else SplineMode[config['spline.mode']]
+
+    # proceed according to the mode
     if mode is SplineMode.ENABLED:
         logging.info('Lineage tracking is ENABLED')
+        # obtain dispatcher from config if not provided
+        factory = ObjectFactory(config)
+        dispatcher = dispatcher if dispatcher is not None else factory.instantiate(LineageDispatcher)
         return lambda func: _active_decorator(func, name, inputs, output, write_mode, system_info, dispatcher)
+
     elif mode is SplineMode.BYPASS:
         logging.info('Lineage tracking is in BYPASS mode -- not captured')
         return _bypass_decorator
+
     elif mode is SplineMode.DISABLED:
         logging.info('Lineage tracking is DISABLED')
         return lambda _: _
+
     else:
-        raise ValueError(f"Unknown Spline mode '{mode.name.rpartition('.')[-1]}'")
+        mode_name = mode.name.rpartition('.')[-1]
+        raise ValueError(f"Unknown Spline mode '{mode_name}'")
 
 
 def _active_decorator(
         func: Callable,
-        name: Optional[str] = None,
-        inputs: tuple[DsParamExpr, ...] = (),
-        output: Optional[DsParamExpr] = None,
-        write_mode: Optional[WriteMode] = None,
-        system_info: Optional[NameAndVersion] = None,
-        dispatcher: Optional[LineageDispatcher] = None,
+        name: Optional[str],
+        inputs: tuple[DsParamExpr, ...],
+        output: Optional[DsParamExpr],
+        write_mode: Optional[WriteMode],
+        system_info: Optional[NameAndVersion],
+        dispatcher: LineageDispatcher,
 ):
     # inspect the 'func' signature and collect the parameter names
     sig: inspect.Signature = inspect.signature(func)
@@ -117,10 +141,6 @@ def _active_decorator(
 
             # obtain lineage model
             lineage = harvest_lineage(ctx, func, duration_ns, error.__str__() if error is not None else None)
-
-            # todo: to be validated on the config level (issue #8)
-            if dispatcher is None:
-                raise LineageTrackingContextIncompleteError('dispatcher')
 
             # dispatch captured lineage
             dispatcher.send_plan(lineage.plan)

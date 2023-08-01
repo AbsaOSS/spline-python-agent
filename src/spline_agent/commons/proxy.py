@@ -25,7 +25,7 @@
 #  limitations under the License.
 
 from enum import Enum
-from typing import TypeVar, Callable, Any, Tuple, Dict
+from typing import TypeVar, Callable, Any, Tuple, Mapping
 
 
 class MemberType(Enum):
@@ -37,7 +37,7 @@ class MemberType(Enum):
 Target = TypeVar('Target')
 MemberName = str
 Args = Tuple[Any, ...]
-Kwargs = Dict[str, Any]
+Kwargs = Mapping[str, Any]
 
 
 class ObservingProxy:

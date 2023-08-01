@@ -13,14 +13,14 @@
 #  limitations under the License.
 
 from typing import Any, cast
-from unittest.mock import create_autospec, Mock
+from unittest.mock import create_autospec, Mock, call
 
 from spline_agent.commons.proxy import ObservingProxy, MemberType
 
 
 class Foo:
     def __init__(self):
-        self._my_prop = None
+        self.__my_prop = None
 
     # noinspection PyMethodMayBeStatic
     def my_plus(self, a: int, b: int):
@@ -28,11 +28,11 @@ class Foo:
 
     @property
     def my_prop(self) -> Any:
-        return self._my_prop
+        return self.__my_prop
 
     @my_prop.setter
     def my_prop(self, value: Any):
-        self._my_prop = value
+        self.__my_prop = value
 
 
 def test_method_call_interception():
@@ -51,9 +51,9 @@ def test_method_call_interception():
     assert seven == 7
     assert test_observer.call_count == 3
     assert test_observer.call_args_list == [
-        ((test_object, 'my_plus', MemberType.METHOD, (1, 2), {}), {}),
-        ((test_object, 'my_plus', MemberType.METHOD, (), {'a': 2, 'b': 3}), {}),
-        ((test_object, 'my_plus', MemberType.METHOD, (3, 4), {}), {}),
+        call(test_object, 'my_plus', MemberType.METHOD, (1, 2), {}),
+        call(test_object, 'my_plus', MemberType.METHOD, (), {'a': 2, 'b': 3}),
+        call(test_object, 'my_plus', MemberType.METHOD, (3, 4), {}),
     ]
 
 
@@ -74,8 +74,8 @@ def test_property_access_interception():
     assert test_proxy.my_prop == 'two'
     assert test_observer.call_count == 4
     assert test_observer.call_args_list == [
-        ((test_object, 'my_prop', MemberType.SETTER, ('one',), {}), {}),
-        ((test_object, 'my_prop', MemberType.GETTER, (), {}), {}),
-        ((test_object, 'my_prop', MemberType.SETTER, ('two',), {}), {}),
-        ((test_object, 'my_prop', MemberType.GETTER, (), {}), {}),
+        call(test_object, 'my_prop', MemberType.SETTER, ('one',), {}),
+        call(test_object, 'my_prop', MemberType.GETTER, (), {}),
+        call(test_object, 'my_prop', MemberType.SETTER, ('two',), {}),
+        call(test_object, 'my_prop', MemberType.GETTER, (), {}),
     ]

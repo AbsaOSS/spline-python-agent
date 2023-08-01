@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from __future__ import annotations
+
 import logging
 
 from spline_agent.dispatcher import LineageDispatcher
@@ -27,16 +29,20 @@ class LoggingLineageDispatcher(LineageDispatcher):
 
     def __init__(
             self,
-            level: int = logging.INFO,
-            logger: logging.Logger = logging.getLogger(__name__),
+            level: str | int,
+            logger: str | logging.Logger,
     ):
-        self.level = level
-        self.logger = logger
+        """
+        :param level: The logging level. Could be specified as an integer or a name ('INFO', 'DEBUG' etc.)
+        :param logger: The logger instance or name.
+        """
+        self.__level = level if isinstance(level, int) else logging.getLevelName(level)
+        self.__logger = logger if isinstance(logger, logging.Logger) else logging.getLogger(logger)
 
     def send_plan(self, plan: ExecutionPlan):
         plan_json: str = to_pretty_json_str(plan)
-        self.logger.log(self.level, f'Execution Plan: {plan_json}')
+        self.__logger.log(self.__level, f'Execution Plan: {plan_json}')
 
     def send_event(self, event: ExecutionEvent):
         event_json: str = to_pretty_json_str(event)
-        self.logger.log(self.level, f'Execution Event: {event_json}')
+        self.__logger.log(self.__level, f'Execution Event: {event_json}')

@@ -12,23 +12,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import re
-import time
+from abc import ABC
+from typing import Any, Optional
 
-from spline_agent.lineage_model import Timestamp
+from .configuration import Configuration
+from ...exceptions import ConfigurationError
 
 
-def current_time() -> Timestamp:
+class BaseConfiguration(Configuration, ABC):
     """
-    Current time since Epoch is millis
+    Base implementation for other Configuration classes
     """
-    return int(round(time.time() * 1000))
 
-
-def camel_to_snake(s: str) -> str:
-    """
-    Converts string in CamelNotation to snake_notation
-    """
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
-    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
-    return s2.lower()
+    def __getitem__(self, key: str) -> Any:
+        value: Optional[Any] = self.get(key)
+        if value is None:
+            raise ConfigurationError(f'Configuration property not found: {key}')
+        return value

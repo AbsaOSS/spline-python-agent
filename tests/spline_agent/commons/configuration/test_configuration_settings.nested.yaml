@@ -1,0 +1,10 @@
+a:
+  b: 1
+c:
+  d: true
+e:
+  f:
+    g: 'Hello'
+h:
+  i:
+    j: [10, 20]

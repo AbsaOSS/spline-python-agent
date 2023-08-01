@@ -12,23 +12,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import re
-import time
+from types import MappingProxyType
+from typing import Any, Mapping, Type, Optional
 
-from spline_agent.lineage_model import Timestamp
+from . import T
+from .base_configuration import BaseConfiguration
 
 
-def current_time() -> Timestamp:
+class DictConfiguration(BaseConfiguration):
     """
-    Current time since Epoch is millis
+    In-memory implementation of Configuration
     """
-    return int(round(time.time() * 1000))
 
+    def __init__(self, settings: Mapping[str, Any]) -> None:
+        self.__settings = MappingProxyType(settings)
 
-def camel_to_snake(s: str) -> str:
-    """
-    Converts string in CamelNotation to snake_notation
-    """
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
-    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
-    return s2.lower()
+    def get(self, key: str, typ: Optional[Type[T]] = None) -> Optional[T]:
+        return self.__settings.get(key)
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.__settings

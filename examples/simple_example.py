@@ -17,7 +17,6 @@ import logging
 import spline_agent
 from spline_agent import get_tracking_context
 from spline_agent.context import WriteMode
-from spline_agent.dispatchers.http_dispatcher import HttpLineageDispatcher
 from spline_agent.lineage_model import NameAndVersion
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,6 @@ logging.basicConfig(level=logging.INFO)
     inputs=('{data_url_1}', '{data_url_2}'),
     output='{result_url}',
     system_info=NameAndVersion(name='name of my data processing engine', version='0.0.0'),
-    dispatcher=HttpLineageDispatcher(base_url='https://example.com/spline/rest/producer'),
 )
 def main(data_url_1: str, data_url_2: str, result_url: str):
     """

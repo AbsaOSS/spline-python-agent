@@ -39,7 +39,20 @@ agent.execute(my_another_function, my_another_output_source, input_source)
 # The lineage would be recorded and the dependency between both runs would be inferred automatically.
 ```
 
+# Building
 
+### TL;DR
+
+```shell
+make build install
+```
+
+### Makefile targets
+
+- _Default_ - Runs tests and linters.
+- `clean` - Remove output directory (`dist`)
+- `build` - Full clean build with everything excepts for installing.
+- `install` - Install WHEEL file produced by the `build` target
 
 ---
 

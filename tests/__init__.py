@@ -11,24 +11,3 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
-import re
-import time
-
-from spline_agent.lineage_model import Timestamp
-
-
-def current_time() -> Timestamp:
-    """
-    Current time since Epoch is millis
-    """
-    return int(round(time.time() * 1000))
-
-
-def camel_to_snake(s: str) -> str:
-    """
-    Converts string in CamelNotation to snake_notation
-    """
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', s)
-    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
-    return s2.lower()
