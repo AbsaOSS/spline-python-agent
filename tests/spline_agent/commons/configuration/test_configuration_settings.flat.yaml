@@ -1,4 +1,4 @@
 x.y: 1
 a.b: true
 m.n.o: 'Hello'
-p.q.r: [10, 20]
+p.q.r: [ 10, 20 ]

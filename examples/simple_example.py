@@ -16,7 +16,7 @@ import logging
 
 import spline_agent
 from spline_agent import get_tracking_context
-from spline_agent.context import WriteMode
+from spline_agent.enums import WriteMode
 from spline_agent.lineage_model import NameAndVersion
 
 logger = logging.getLogger(__name__)

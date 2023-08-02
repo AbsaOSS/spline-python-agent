@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-class LineageTrackingContextNotInitializedError(BaseException):
+class LineageTrackingContextNotInitializedError(Exception):
     """
     Lineage harvesting context was not properly initialized
     """
@@ -21,7 +21,7 @@ class LineageTrackingContextNotInitializedError(BaseException):
         super().__init__(message)
 
 
-class LineageTrackingContextIncompleteError(BaseException):
+class LineageTrackingContextIncompleteError(Exception):
     """
     Required property is missing from the lineage harvesting context
     """
@@ -31,7 +31,7 @@ class LineageTrackingContextIncompleteError(BaseException):
         super().__init__(f"Required property '{property_name}' wasn't specified")
 
 
-class ConfigurationError(BaseException):
+class ConfigurationError(Exception):
     """
     Represents some problem in the configuration
     """

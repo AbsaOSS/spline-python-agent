@@ -25,7 +25,7 @@
 #  limitations under the License.
 
 from enum import Enum
-from typing import TypeVar, Callable, Any, Tuple, Mapping
+from typing import TypeVar, Callable, Any, Mapping
 
 
 class MemberType(Enum):
@@ -36,7 +36,7 @@ class MemberType(Enum):
 
 Target = TypeVar('Target')
 MemberName = str
-Args = Tuple[Any, ...]
+Args = tuple[Any, ...]
 Kwargs = Mapping[str, Any]
 
 

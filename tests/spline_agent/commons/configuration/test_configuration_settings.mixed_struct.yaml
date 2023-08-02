@@ -7,4 +7,4 @@ g:
 j:
   k:
     # this is only accessible as ['j']['k']['l.m'], not as ['j.k.l.m']
-    l.m: [10, 20]
+    l.m: [ 10, 20 ]
