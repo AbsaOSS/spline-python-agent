@@ -13,16 +13,16 @@
 #  limitations under the License.
 
 import inspect
-import sys
+import platform
 import uuid
 from typing import Callable
 
+from spline_agent.commons.utils import current_time
 from spline_agent.constants import AGENT_INFO, EXECUTION_PLAN_NAMESPACE
 from spline_agent.context import LineageTrackingContext, WriteMode
 from spline_agent.exceptions import LineageTrackingContextIncompleteError
 from spline_agent.json_serde import to_compact_json_str
 from spline_agent.lineage_model import *
-from spline_agent.commons.utils import current_time
 
 
 def harvest_lineage(
@@ -68,6 +68,7 @@ def harvest_lineage(
         operations=operations,
         systemInfo=ctx.system_info,
         agentInfo=AGENT_INFO,
+        extraInfo={}
     )
 
     plan.id = uuid.uuid5(EXECUTION_PLAN_NAMESPACE, to_compact_json_str(plan))
@@ -77,6 +78,14 @@ def harvest_lineage(
         timestamp=cur_time,
         durationNs=duration_ns,
         error=error,
+        extra={
+            'python_implementation': platform.python_implementation(),
+            'python_version': platform.python_version(),
+            'platform': platform.platform(),
+            'system': platform.system(),
+            'release': platform.release(),
+            'machine': platform.machine(),
+        }
     )
 
     lineage = Lineage(plan, event)
@@ -97,7 +106,6 @@ def _process_func(ctx: LineageTrackingContext, func: Callable) -> tuple[DataOper
         childIds=tuple(f'op-{i + 2}' for i in range(len(ctx.inputs))),
         name='Python script',
         extra={
-            'python_version': sys.version,
             'function_name': func_name,
             'module_name': module_name,
             'source_file': file_name,

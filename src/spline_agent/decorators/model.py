@@ -12,8 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from spline_agent.datasources import DataSource
-from spline_agent.decorators.io_decorators import inputs, output
-from spline_agent.decorators.model import DsParamExpr
-from spline_agent.decorators.track_lineage_decorator import track_lineage
-from .context import get_tracking_context
+from typing import Union
+
+from ..datasources import DataSource
+
+SpELExpr = str
+DsParamExpr = Union[SpELExpr, DataSource]

@@ -14,6 +14,7 @@
 
 import importlib.metadata
 import os
+import platform
 from uuid import UUID
 
 import spline_agent
@@ -22,6 +23,11 @@ from spline_agent.lineage_model import NameAndVersion
 AGENT_INFO = NameAndVersion(
     name='spline-python-agent',
     version=importlib.metadata.version(spline_agent.__name__)
+)
+
+DEFAULT_SYSTEM_INFO = NameAndVersion(
+    name=platform.python_implementation(),
+    version=platform.python_version()
 )
 
 EXECUTION_PLAN_NAMESPACE: UUID = UUID('475196d0-16ca-4cba-aec7-c9f2ddd9326c')

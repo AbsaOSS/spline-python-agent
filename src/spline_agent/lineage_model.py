@@ -67,9 +67,10 @@ class Operations:
 class ExecutionPlan:
     id: Optional[UUID]
     name: Optional[str]
-    systemInfo: NameAndVersion
-    agentInfo: NameAndVersion
     operations: Operations
+    agentInfo: NameAndVersion
+    systemInfo: NameAndVersion
+    extraInfo: Mapping[str, Any]
 
 
 @dataclass
@@ -78,6 +79,7 @@ class ExecutionEvent:
     timestamp: Timestamp
     durationNs: Optional[DurationNs]
     error: Optional[Any]
+    extra: Mapping[str, Any]
 
 
 @dataclass

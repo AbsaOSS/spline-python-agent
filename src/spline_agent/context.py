@@ -84,7 +84,7 @@ _context_holder: ContextVar[LineageTrackingContext] = ContextVar('context')
 
 
 def get_tracking_context() -> LineageTrackingContext:
-    from .decorator import track_lineage
+    from spline_agent.decorators.track_lineage_decorator import track_lineage
 
     ctx = _context_holder.get(None)
     if ctx is None:
