@@ -1,13 +1,10 @@
 # Spline Agent for Python
 
-See: https://github.com/AbsaOSS/spline
-
----
 [![PyPI](https://img.shields.io/pypi/v/spline-agent)](https://pypi.org/project/spline-agent/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spline-agent)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/spline-agent)
 
----
+See: https://github.com/AbsaOSS/spline
 
 The goal is to create a module that would act as a wrapper around a user Python code,
 that would execute it in a lineage trackable manner. The main idea is that the user would create a function,
