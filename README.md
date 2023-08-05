@@ -4,16 +4,16 @@ See: https://github.com/AbsaOSS/spline
 
 The goal is to create a module that would act as a wrapper around a user Python code,
 that would execute it in a lineage trackable manner. The main idea is that the user would create a function,
-e.g. `my_data_transform`, that would accept input and output data source definitions as function arguments,
+e.g. `my_awesome_function`, that accepts input and output data source definitions as function arguments,
 and it would execute some logic reading the data from input sources, transforming it in some way and writing
-the result into the output. Then instead of executing that function directly, the user would call Spline Python agent
-and pass the function as a callback parameter along with the concrete input and output data source definitions.
-The Agent would then inspect the given function and the input/output definitions, execute the function,
-take some stats, create a lineage metadata and send it to the Spline server in a similar way
+the result into the output. Then, in order to track lineage, the user would decorate that function with the 
+Spline Python agent decorators and execute the function as usual.
+The Agent would then intercept the call, inspect the given function and the input/output definitions,
+execute the function, take some stats, create a lineage metadata and send it to the Spline server in a similar way
 the [Spark Agent](https://github.com/AbsaOSS/spline-spark-agent) does it.
 So that the lineage tracking process would be as seamless and non-intrusive to the user code as possible in Python.
 
-Example:
+### Example
 
 ```python
 import spline_agent

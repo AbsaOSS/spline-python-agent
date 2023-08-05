@@ -2,8 +2,16 @@
 name = "spline-agent"
 version = "0.1.0.dev1"
 description = "Spline agent for Python. Lineage tracking utility."
-authors = [
-    "Oleksandr Vayda <oleksandr.vayda@absa.africa>"
+authors = ["Oleksandr Vayda <oleksandr.vayda@absa.africa>"]
+license = "Apache-2.0"
+homepage = "https://github.com/AbsaOSS/spline-python-agent"
+repository = "https://github.com/AbsaOSS/spline-python-agent"
+readme = "README.md"
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Software Development :: Libraries",
 ]
 
 [tool.poetry.dependencies]
