@@ -1,12 +1,19 @@
-# Spline agent for Python scripts [PoC]
+# Spline Agent for Python
 
 See: https://github.com/AbsaOSS/spline
+
+---
+[![PyPI](https://img.shields.io/pypi/v/spline-agent)](https://pypi.org/project/spline-agent/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/spline-agent)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/spline-agent)
+
+---
 
 The goal is to create a module that would act as a wrapper around a user Python code,
 that would execute it in a lineage trackable manner. The main idea is that the user would create a function,
 e.g. `my_awesome_function`, that accepts input and output data source definitions as function arguments,
 and it would execute some logic reading the data from input sources, transforming it in some way and writing
-the result into the output. Then, in order to track lineage, the user would decorate that function with the 
+the result into the output. Then, in order to track lineage, the user would decorate that function with the
 Spline Python agent decorators and execute the function as usual.
 The Agent would then intercept the call, inspect the given function and the input/output definitions,
 execute the function, take some stats, create a lineage metadata and send it to the Spline server in a similar way
