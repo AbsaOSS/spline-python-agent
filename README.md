@@ -16,28 +16,30 @@ So that the lineage tracking process would be as seamless and non-intrusive to t
 Example:
 
 ```python
-# Define a user function
-def my_data_transform(output_source, input_source_1, input_source_2):
+import spline_agent
+from spline_agent.enums import WriteMode
+
+
+# Decorate a function you want to track with as follows
+@spline_agent.track_lineage()
+@spline_agent.inputs('{input_source_1}', '{input_source_2}')
+@spline_agent.output('{output_source}', WriteMode.APPEND)
+def my_awesome_function(output_source, input_source_1, input_source_2):
     print("read from input source")
     print("do some business logic")
     print("write into the output")
-  
-# Define data sources
-input_source_1 = S3DataSource(...)
-input_source_2 = FileDataSource(...)
-output_source = HDFSDataSource("my.parquet")
 
-# Use the SplineAgent to execute the user function
-agent = SplineAgent()
-agent.execute(my_data_transform, output_source, input_source_1, input_source_2)
 
-# later in another Python program that consumes data from the "my.parquet"... 
-
-input_source = HDFSDataSource("my.parquet")
-agent.execute(my_another_function, my_another_output_source, input_source)
-
-# The lineage would be recorded and the dependency between both runs would be inferred automatically.
+# Execute the target function as normal
+my_awesome_function("some_url_1", "some_url_2", "some_url_3")
 ```
+
+The `inputs()` and `output()` decorators could be places on any other
+function that is called (also transitively) from the `my_awesome_function`.
+The data source can be represented as a URL string t the source,
+or the string containing the Spline Expression (SpEL) - currently ir only
+supports the format `"{func_parameter_name}"` (e.r. `"{abc}"` would mean -
+take the value from the `abc` parameter of the decorated function).
 
 # Building
 
