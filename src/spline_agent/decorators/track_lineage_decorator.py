@@ -16,16 +16,15 @@ import inspect
 import logging
 import time
 from functools import wraps
-from typing import Optional, Union, Mapping, Any, cast, Callable
-from urllib.parse import urlparse
+from typing import Optional, Any, cast, Callable
 
 from spline_agent.commons.configuration import Configuration, CompositeConfiguration
 from spline_agent.commons.configuration.env_configuration import EnvConfiguration
 from spline_agent.commons.configuration.file_configuration import FileConfiguration
 from spline_agent.commons.proxy import ObservingProxy
-from spline_agent.constants import CONFIG_FILE_DEFAULT, CONFIG_FILE_USER
-from spline_agent.context import with_context_do, LineageTrackingContext, WriteMode
-from spline_agent.datasources import DataSource
+from spline_agent.constants import CONFIG_FILE_DEFAULT, CONFIG_FILE_USER, DEFAULT_SYSTEM_INFO
+from spline_agent.context import with_context_do, LineageTrackingContext
+from spline_agent.decorators.spel_evaluator import SpELEvaluator
 from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.enums import SplineMode
 from spline_agent.harvester import harvest_lineage
@@ -34,15 +33,10 @@ from spline_agent.object_factory import ObjectFactory
 
 logger = logging.getLogger(__name__)
 
-DsParamExpr = Union[str, DataSource]
-
 
 def track_lineage(
         mode: Optional[SplineMode] = None,
         name: Optional[str] = None,
-        inputs: tuple[DsParamExpr, ...] = (),
-        output: Optional[DsParamExpr] = None,
-        write_mode: Optional[WriteMode] = None,
         system_info: Optional[NameAndVersion] = None,
         dispatcher: Optional[LineageDispatcher] = None,
         config: Optional[Configuration] = None,
@@ -71,8 +65,9 @@ def track_lineage(
         logging.info('Lineage tracking is ENABLED')
         # obtain dispatcher from config if not provided
         factory = ObjectFactory(config)
-        dispatcher = dispatcher if dispatcher is not None else factory.instantiate(LineageDispatcher)
-        return lambda func: _active_decorator(func, name, inputs, output, write_mode, system_info, dispatcher)
+        disp = dispatcher if dispatcher is not None else factory.instantiate(LineageDispatcher)
+        si = system_info if system_info is not None else DEFAULT_SYSTEM_INFO
+        return lambda func: _active_decorator(func, name, si, disp)
 
     elif mode is SplineMode.BYPASS:
         logging.info('Lineage tracking is in BYPASS mode -- not captured')
@@ -90,39 +85,17 @@ def track_lineage(
 def _active_decorator(
         func: Callable,
         name: Optional[str],
-        inputs: tuple[DsParamExpr, ...],
-        output: Optional[DsParamExpr],
-        write_mode: Optional[WriteMode],
-        system_info: Optional[NameAndVersion],
+        system_info: NameAndVersion,
         dispatcher: LineageDispatcher,
 ):
-    # inspect the 'func' signature and collect the parameter names
-    sig: inspect.Signature = inspect.signature(func)
-    params: Mapping[str, inspect.Parameter] = sig.parameters
-
     @wraps(func)
     def active_wrapper(*args, **kwargs):
+        spel_evaluator = SpELEvaluator(func, args, kwargs)
+
         # create and pre-populate a new harvesting context
         ctx = LineageTrackingContext()
-
-        # create a combined dictionary of all arguments passed to target function
-        bindings = {**{key: arg for key, arg in zip(params, args)}, **kwargs}
-
-        # ... app name
-        ctx.name = _eval_str_expr(name, bindings) if name else func.__name__
-
-        # ... inputs
-        for inp in inputs:
-            ds = _eval_ds_expr(inp, bindings)
-            ctx.add_input(ds)
-
-        # ... output
-        if output is not None:
-            ds = _eval_ds_expr(output, bindings)
-            ctx.output = ds
-
-        # ... other params
-        ctx.write_mode = write_mode
+        app_name = spel_evaluator.eval(name) if name else name
+        ctx.name = app_name if app_name else func.__name__
         ctx.system_info = system_info
 
         # prepare execution stage
@@ -163,33 +136,3 @@ def _bypass_decorator(func):
         return with_context_do(isolated_ctx, lambda: func(*args, **kwargs))
 
     return bypass_wrapper
-
-
-def _eval_ds_expr(expr: DsParamExpr, mapping=None) -> DataSource:
-    if mapping is None:
-        mapping = {}
-
-    if isinstance(expr, DataSource):
-        return expr
-
-    if isinstance(expr, str):
-        if expr.startswith('{') and expr.endswith('}') and (expr[1:-1]).isidentifier():
-            key = expr[1:-1]
-            val = mapping[key]
-            return _eval_ds_expr(val)
-        if urlparse(expr):
-            return DataSource(expr)
-
-    raise ValueError(f'{expr} should be a DataSource, URL string, or a parameter binding expression like {{name}}')
-
-
-def _eval_str_expr(expr: str, mapping=None) -> str:
-    if mapping is None:
-        mapping = {}
-
-    if expr.startswith('{') and expr.endswith('}') and (expr[1:-1]).isidentifier():
-        key = expr[1:-1]
-        val = mapping[key]
-        return val
-
-    return expr

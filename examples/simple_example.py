@@ -13,20 +13,18 @@
 #  limitations under the License.
 
 import logging
+import os
 
 import spline_agent
-from spline_agent import get_tracking_context
 from spline_agent.enums import WriteMode
 from spline_agent.lineage_model import NameAndVersion
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.getLevelName(os.environ.get('LOG_LEVEL') or 'INFO'))
 
 
 @spline_agent.track_lineage(
     name='My awesome python app',
-    inputs=('{data_url_1}', '{data_url_2}'),
-    output='{result_url}',
     system_info=NameAndVersion(name='name of my data processing engine', version='0.0.0'),
 )
 def main(data_url_1: str, data_url_2: str, result_url: str):
@@ -44,16 +42,17 @@ def main(data_url_1: str, data_url_2: str, result_url: str):
     result_data = _do_some_magic(data_1, data_2)
 
     _dummy_write(result_url, result_data)
-    get_tracking_context().write_mode = WriteMode.OVERWRITE
 
     logger.info('DONE')
 
 
+@spline_agent.inputs('{url}')
 def _dummy_read(url: str):
     logger.info(f'reading from {url} ... OK')
     return "dummy data"
 
 
+@spline_agent.output('{url}', WriteMode.OVERWRITE)
 def _dummy_write(url: str, data):
     logger.info(f'writing [{data}] to {url} ... OK')
     pass

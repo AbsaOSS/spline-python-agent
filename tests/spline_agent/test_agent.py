@@ -17,9 +17,11 @@ from unittest.mock import create_autospec
 
 import pytest
 
+import spline_agent
+from spline_agent.constants import DEFAULT_SYSTEM_INFO
 from spline_agent.context import WriteMode, get_tracking_context, LineageTrackingContext
 from spline_agent.datasources import DataSource
-from spline_agent.decorator import track_lineage
+from spline_agent.decorators.track_lineage_decorator import track_lineage
 from spline_agent.dispatcher import LineageDispatcher
 from spline_agent.enums import SplineMode
 from spline_agent.exceptions import LineageTrackingContextIncompleteError
@@ -41,13 +43,14 @@ def test_decorator_calls_func_and_returns_value():
     dummy_ds = DataSource('dummy')
     dummy_nv = NameAndVersion(name="dummy", version="dummy")
 
-    @track_lineage(dispatcher=mock_disp, output=dummy_ds, write_mode=WriteMode.APPEND, system_info=dummy_nv)
+    @spline_agent.track_lineage(dispatcher=mock_disp, system_info=dummy_nv)
+    @spline_agent.output(dummy_ds, WriteMode.APPEND)
     def test_divide__mode_enabled(x: int, y: int): return x / y
 
-    @track_lineage(mode=SplineMode.BYPASS)
+    @spline_agent.track_lineage(mode=SplineMode.BYPASS)
     def test_divide__mode_by_pass(x: int, y: int): return x / y
 
-    @track_lineage(mode=SplineMode.BYPASS)
+    @spline_agent.track_lineage(mode=SplineMode.BYPASS)
     def test_divide__mode_disabled(x: int, y: int): return x / y
 
     # execute and verify
@@ -72,13 +75,14 @@ def test_decorator_calls_func_and_propagates_errors():
     dummy_ds = DataSource('dummy')
     dummy_nv = NameAndVersion(name="dummy", version="dummy")
 
-    @track_lineage(dispatcher=mock_disp, output=dummy_ds, write_mode=WriteMode.APPEND, system_info=dummy_nv)
+    @spline_agent.track_lineage(dispatcher=mock_disp, system_info=dummy_nv)
+    @spline_agent.output(dummy_ds, WriteMode.APPEND)
     def test_divide__mode_enabled(x: int, y: int): return x / y
 
-    @track_lineage(mode=SplineMode.BYPASS)
+    @spline_agent.track_lineage(mode=SplineMode.BYPASS)
     def test_divide__mode_by_pass(x: int, y: int): return x / y
 
-    @track_lineage(mode=SplineMode.BYPASS)
+    @spline_agent.track_lineage(mode=SplineMode.BYPASS)
     def test_divide__mode_disabled(x: int, y: int): return x / y
 
     # execute and verify
@@ -109,7 +113,8 @@ def test_context_mgmt():
 
     captured_ctx: Optional[LineageTrackingContext] = None
 
-    @track_lineage(dispatcher=dummy_dispatcher, output=dummy_output, write_mode=WriteMode.APPEND, system_info=dummy_si)
+    @spline_agent.track_lineage(dispatcher=dummy_dispatcher, system_info=dummy_si)
+    @spline_agent.output(dummy_output, WriteMode.APPEND)
     def test_func():
         nonlocal captured_ctx
         captured_ctx = get_tracking_context()
@@ -134,7 +139,7 @@ def test_decorator_mode_bypass__context_remains_working():
     # prepare
     ctx: Optional[LineageTrackingContext] = None
 
-    @track_lineage(mode=SplineMode.BYPASS)
+    @spline_agent.track_lineage(mode=SplineMode.BYPASS)
     def test_bypass_plus_func(a: int, b: int) -> int:
         # verify the context is accessible and no error is thrown
         nonlocal ctx
@@ -156,7 +161,7 @@ def test_decorator_mode_bypass__context_remains_working():
 
 def test_decorator_mode_disabled__no_context_access():
     # prepare
-    @track_lineage(mode=SplineMode.DISABLED)
+    @spline_agent.track_lineage(mode=SplineMode.DISABLED)
     def test_untracked_plus_func(a: int, b: int) -> int:
         return a + b
 
@@ -169,7 +174,7 @@ def test_decorator_mode_disabled__no_context_access():
 
 def test_decorator_mode_disabled__with_context_access():
     # prepare
-    @track_lineage(mode=SplineMode.DISABLED)
+    @spline_agent.track_lineage(mode=SplineMode.DISABLED)
     def test_untracked_func():
         get_tracking_context()
 
@@ -184,7 +189,7 @@ def test_decorator_with_default_args__no_capture_lineage():
 
     ctx: Optional[LineageTrackingContext] = None
 
-    @track_lineage(dispatcher=mock_dispatcher)
+    @spline_agent.track_lineage(dispatcher=mock_dispatcher)
     def test_func():
         nonlocal ctx
         ctx = get_tracking_context()
@@ -196,10 +201,10 @@ def test_decorator_with_default_args__no_capture_lineage():
     # verify
     assert ctx is not None
     assert ctx.name == 'test_func'
+    assert ctx.system_info == DEFAULT_SYSTEM_INFO
     assert len(ctx.inputs) == 0
     assert ctx.output is None
     assert ctx.write_mode is None
-    assert ctx.system_info is None
 
     # we didn't provide required configuration, so no lineage should be captured
     mock_dispatcher.send_plan.assert_not_called()
@@ -212,14 +217,13 @@ def test_decorator_with_provided_args__capture_lineage():
     ctx: Optional[LineageTrackingContext] = None
 
     # noinspection PyUnusedLocal
-    @track_lineage(
+    @spline_agent.track_lineage(
         name='My test app',
-        inputs=('foo', '{arg1}', '{arg2}'),
-        output='qux',
-        write_mode=WriteMode.OVERWRITE,
         system_info=NameAndVersion('dummy system', 'dummy version'),
         dispatcher=mock_dispatcher
     )
+    @spline_agent.inputs('foo', '{arg1}', '{arg2}')
+    @spline_agent.output('qux', WriteMode.OVERWRITE)
     def my_test_func(arg1: str, arg2: DataSource):
         nonlocal ctx
         ctx = get_tracking_context()
@@ -246,11 +250,12 @@ def test_decorator_with_name_as_expression():
     ctx: Optional[LineageTrackingContext] = None
 
     # noinspection PyUnusedLocal
-    @track_lineage(name='{arg1}',
-                   dispatcher=dummy_dispatcher,
-                   output=dummy_output,
-                   write_mode=WriteMode.APPEND,
-                   system_info=dummy_si)
+    @spline_agent.track_lineage(
+        name='{arg1}',
+        dispatcher=dummy_dispatcher,
+        system_info=dummy_si
+    )
+    @spline_agent.output(dummy_output, WriteMode.APPEND)
     def my_test_func(arg1: str):
         nonlocal ctx
         ctx = get_tracking_context()
