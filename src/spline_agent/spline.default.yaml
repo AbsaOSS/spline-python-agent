@@ -30,5 +30,5 @@ spline:
       base_url:
       plans_url: 'execution-plans'
       events_url: 'execution-events'
-      content_type: 'application/vnd.absa.spline.producer.v1.2+json'
+      content_type: 'application/vnd.absa.spline.producer.v1.1+json'
 
