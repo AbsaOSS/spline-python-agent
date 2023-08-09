@@ -2,5 +2,4 @@ spline:
   lineage_dispatcher:
 #    type: http
     http:
-      content_type: 'application/vnd.absa.spline.producer.v1.1+json'
 #      base_url: 'http://localhost:8080/producer'
