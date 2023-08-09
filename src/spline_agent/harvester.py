@@ -40,8 +40,8 @@ def harvest_lineage(
     cur_time = current_time()
 
     write_operation = WriteOperation(
-        id='op-0',
-        childIds=('op-1',),
+        id=0,
+        childIds=(1,),
         name='Write',  # todo: put something more meaningful here, maybe 'write to {ds.type}' (issue #15)
         outputSource=ctx.output.url,
         append=ctx.write_mode == WriteMode.APPEND,
@@ -49,7 +49,7 @@ def harvest_lineage(
 
     read_operations = tuple(
         ReadOperation(
-            id=f'op-{i + 2}',
+            id=i + 2,
             inputSources=(inp.url,),
             name='Read',  # todo: put something more meaningful here, maybe 'read from {ds.type}' (issue #15)
         ) for i, inp in zip(range(len(ctx.inputs)), ctx.inputs))
@@ -102,8 +102,8 @@ def _process_func(ctx: LineageTrackingContext, func: Callable) -> tuple[DataOper
     file_name = inspect.getfile(func)
 
     operation = DataOperation(
-        id='op-1',
-        childIds=tuple(f'op-{i + 2}' for i in range(len(ctx.inputs))),
+        id=1,
+        childIds=tuple(i + 2 for i in range(len(ctx.inputs))),
         name='Python script',
         extra={
             'function_name': func_name,

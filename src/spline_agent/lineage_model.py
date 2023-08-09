@@ -23,7 +23,7 @@ Timestamp = int
 DurationNs = int
 
 # Represents an execution plan operation ID as string, e.g. 'op-123'
-OperationId = str
+OperationId = int
 
 
 @dataclass
